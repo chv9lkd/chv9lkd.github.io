@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Todo List</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2d3748;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: #4299e1;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background-color: #3182ce;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            background: #f8fafc;
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+            gap: 0.5rem;
+        }
+
+        li.completed {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+        }
+
+        .delete-btn {
+            margin-left: auto;
+            background-color: #fc8181;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .delete-btn:hover {
+            background-color: #f56565;
+        }
+
+        .time-left {
+            text-align: center;
+            color: #4a5568;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Daily Todo List</h1>
+        <div class="input-group">
+            <input type="text" id="todoInput" placeholder="Add a new todo">
+            <button id="addButton">Add</button>
+        </div>
+        <ul id="todoList"></ul>
+        <p class="time-left" id="timeLeft"></p>
+    </div>
+
+    <script>
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize variables in function scope
+            let todos = [];
+            
+            // Function to safely interact with localStorage
+            function getFromStorage(key, defaultValue) {
+                try {
+                    const item = localStorage.getItem(key);
+                    return item ? JSON.parse(item) : defaultValue;
+                } catch (error) {
+                    console.error('Error reading from localStorage:', error);
+                    return defaultValue;
+                }
+            }
+
+            function saveToStorage(key, value) {
+                try {
+                    localStorage.setItem(key, JSON.stringify(value));
+                } catch (error) {
+                    console.error('Error saving to localStorage:', error);
+                }
+            }
+
+            // Initialize todos and check for reset
+            function initializeTodos() {
+                const lastDate = getFromStorage('lastDate', '');
+                const today = new Date().toDateString();
+
+                if (lastDate !== today) {
+                    todos = [];
+                    saveToStorage('lastDate', today);
+                    saveToStorage('todos', todos);
+                } else {
+                    todos = getFromStorage('todos', []);
+                }
+                renderTodos();
+            }
+
+            // Render todos to the list
+            function renderTodos() {
+                const list = document.getElementById('todoList');
+                if (!list) return;
+
+                list.innerHTML = todos.map(todo => `
+                    <li class="${todo.completed ? 'completed' : ''}">
+                        <input 
+                            type="checkbox" 
+                            class="checkbox" 
+                            ${todo.completed ? 'checked' : ''} 
+                            data-id="${todo.id}"
+                        >
+                        <span>${todo.text}</span>
+                        <button class="delete-btn" data-id="${todo.id}">Delete</button>
+                    </li>
+                `).join('');
+
+                // Add event listeners to checkboxes and delete buttons
+                list.querySelectorAll('.checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', function() {
+                        toggleTodo(this.dataset.id);
+                    });
+                });
+
+                list.querySelectorAll('.delete-btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        deleteTodo(this.dataset.id);
+                    });
+                });
+            }
+
+            // Add new todo
+            function addTodo() {
+                const input = document.getElementById('todoInput');
+                if (!input) return;
+
+                const text = input.value.trim();
+                if (text) {
+                    todos.push({
+                        text,
+                        completed: false,
+                        id: Date.now()
+                    });
+                    saveToStorage('todos', todos);
+                    input.value = '';
+                    renderTodos();
+                }
+            }
+
+            // Toggle todo completion
+            function toggleTodo(id) {
+                id = parseInt(id);
+                todos = todos.map(todo => 
+                    todo.id === id ? {...todo, completed: !todo.completed} : todo
+                );
+                saveToStorage('todos', todos);
+                renderTodos();
+            }
+
+            // Delete todo
+            function deleteTodo(id) {
+                id = parseInt(id);
+                todos = todos.filter(todo => todo.id !== id);
+                saveToStorage('todos', todos);
+                renderTodos();
+            }
+
+            // Update time left display
+            function updateTimeLeft() {
+                const timeLeftElement = document.getElementById('timeLeft');
+                if (!timeLeftElement) return;
+
+                const now = new Date();
+                const tomorrow = new Date(now);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(0, 0, 0, 0);
+                
+                const timeLeft = tomorrow - now;
+                const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+                const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                
+                timeLeftElement.textContent = `List resets in ${hours}h ${minutes}m`;
+            }
+
+            // Handle notifications
+            function initializeNotifications() {
+                if ('Notification' in window) {
+                    Notification.requestPermission().catch(error => {
+                        console.error('Error requesting notification permission:', error);
+                    });
+                }
+            }
+
+            function sendNotification() {
+                if (Notification.permission === "granted") {
+                    const completed = todos.filter(t => t.completed).length;
+                    const total = todos.length;
+                    const remaining = total - completed;
+                    
+                    try {
+                        new Notification("Daily Todo List Update", {
+                            body: `You have completed ${completed}/${total} tasks. ${remaining} remaining.`,
+                            icon: "/api/placeholder/64/64"
+                        });
+                    } catch (error) {
+                        console.error('Error sending notification:', error);
+                    }
+                }
+            }
+
+            // Set up event listeners
+            const addButton = document.getElementById('addButton');
+            if (addButton) {
+                addButton.addEventListener('click', addTodo);
+            }
+
+            const todoInput = document.getElementById('todoInput');
+            if (todoInput) {
+                todoInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        addTodo();
+                    }
+                });
+            }
+
+            // Initialize the application
+            initializeTodos();
+            initializeNotifications();
+            updateTimeLeft();
+
+            // Set up intervals
+            setInterval(sendNotification, 2 * 60 * 60 * 1000); // Every 2 hours
+            setInterval(updateTimeLeft, 60 * 1000); // Every minute
+        });
+    </script>
+</body>
+</html>
