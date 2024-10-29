@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Management</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Reset and Root Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        :root {
+            --primary-color: #4F46E5;
+            --secondary-color: #6366F1;
+            --background-color: #F9FAFB;
+            --surface-color: #FFFFFF;
+            --text-primary: #111827;
+            --text-secondary: #6B7280;
+            --border-color: #E5E7EB;
+            --hover-color: #F3F4F6;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Layout */
+        .app-container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--surface-color);
+            border-right: 1px solid var(--border-color);
+            padding: 1.5rem;
+            position: fixed;
+            height: 100vh;
+            width: 250px;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: var(--text-secondary);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: var(--hover-color);
+            color: var(--text-primary);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 250px;
+            padding: 2rem;
+        }
+
+        .content-header, .search-bar, .board {
+            margin-bottom: 2rem;
+        }
+
+        .header-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* Columns and Tasks */
+        .column-header, .task, .add-task {
+            background: var(--surface-color);
+            border-radius: 0.75rem;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+
+        .task:hover, .add-task:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .task-title {
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            color: var(--text-primary);
+        }
+
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-weight: 500;
+        }
+
+        .tag.high { background: #FEE2E2; color: #DC2626; }
+        .tag.medium { background: #FEF3C7; color: #D97706; }
+        .tag.low { background: #DBEAFE; color: #2563EB; }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: var(--surface-color);
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            transition: border 0.2s, box-shadow 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="app-container">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-logo">
+                    <i class="fas fa-tasks"></i>
+                    Task Manager
+                </div>
+                <nav>
+                    <div class="nav-item active">
+                        <i class="fas fa-columns"></i> Board View
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-list"></i> List View
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-calendar"></i> Calendar
+                    </div>
+                    <div class="nav-item">
+                        <i class="fas fa-chart-bar"></i> Analytics
+                    </div>
+                </nav>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="main-content">
+                <div class="content-header">
+                    <h1 class="header-title">Project Tasks</h1>
+                    <button class="btn btn-primary" @click="openModal">
+                        <i class="fas fa-plus"></i> New Task
+                    </button>
+                </div>
+
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" class="form-control" placeholder="Search tasks..." v-model="searchQuery">
+                </div>
+
+                <div class="board">
+                    <div v-for="column in filteredColumns" :key="column.id" class="column">
+                        <div class="column-header">
+                            <h2>{{ column.title }}</h2>
+                            <span>{{ column.tasks.length }}</span>
+                        </div>
+                        
+                        <div class="tasks">
+                            <div v-for="task in column.tasks" :key="task.id" class="task" @click="editTask(task)">
+                                <div class="task-title">{{ task.title }}</div>
+                                <div class="task-meta">
+                                    <span :class="['tag', task.priority.toLowerCase()]">
+                                        <i class="fas fa-flag"></i> {{ task.priority }}
+                                    </span>
+                                    <span>
+                                        <i class="far fa-calendar"></i> {{ formatDate(task.dueDate) }}
+                                    </span>
+                                </div>
+                                <div class="progress-container" v-if="task.progress">
+                                    <div class="progress-bar" :style="{ width: task.progress + '%' }"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="add-task" @click="openModal">
+                            <i class="fas fa-plus"></i> Add new task
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modal -->
+                <div v-if="showModal" class="modal" @click="closeModal">
+                    <div class="modal-content" @click.stop>
+                        <form @submit.prevent="handleSubmit">
+                            <label>Title</label>
+                            <input class="form-control" v-model="currentTask.title" required>
+                            <label>Priority</label>
+                            <select class="form-control" v-model="currentTask.priority">
+                                <option>High</option>
+                                <option>Medium</option>
+                                <option>Low</option>
+                            </select>
+                            <button class="btn btn-primary">Save</button>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+</body>
+</html>
