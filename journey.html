@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Cosmic Journey</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+        }
+
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+
+        .speed-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-radius: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .speed-card:hover {
+            transform: scale(1.02);
+        }
+
+        .distance {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+            color: #4fd1c5;
+        }
+
+        .label {
+            font-size: 1.2rem;
+            color: #a0aec0;
+        }
+
+        .total {
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .planet-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Your Cosmic Journey</h1>
+        <div id="earthRotation" class="speed-card">
+            <div class="planet-icon">🌍</div>
+            <div class="label">Earth's Rotation</div>
+            <div class="distance"></div>
+        </div>
+        
+        <div id="solarOrbit" class="speed-card">
+            <div class="planet-icon">☀️</div>
+            <div class="label">Solar Orbit</div>
+            <div class="distance"></div>
+        </div>
+        
+        <div id="galacticOrbit" class="speed-card">
+            <div class="planet-icon">🌌</div>
+            <div class="label">Galactic Orbit</div>
+            <div class="distance"></div>
+        </div>
+        
+        <div id="localGroup" class="speed-card">
+            <div class="planet-icon">✨</div>
+            <div class="label">Local Group Movement</div>
+            <div class="distance"></div>
+        </div>
+        
+        <div id="total" class="speed-card total">
+            <div class="label">Total Distance Traveled</div>
+            <div class="distance pulse"></div>
+        </div>
+    </div>
+
+    <script>
+        // Constants (speeds in kilometers per second, will convert to feet)
+        const EARTH_ROTATION_SPEED = 0.4651 * 3280.84; // km/s to feet/s at equator
+        const EARTH_ORBITAL_SPEED = 29.78 * 3280.84; // km/s to feet/s
+        const SOLAR_SYSTEM_SPEED = 230 * 3280.84; // km/s to feet/s around galactic center
+        const LOCAL_GROUP_SPEED = 600 * 3280.84; // km/s to feet/s through space
+
+        // Initialize start time
+        const startTime = new Date();
+
+        function formatDistance(feet) {
+            if (feet < 5280) {
+                return `${feet.toFixed(0)} feet`;
+            } else if (feet < 5280000) {
+                return `${(feet / 5280).toFixed(2)} miles`;
+            } else if (feet < 5280000000) {
+                return `${(feet / 5280 / 1000).toFixed(2)} thousand miles`;
+            } else if (feet < 5280000000000) {
+                return `${(feet / 5280 / 1000000).toFixed(2)} million miles`;
+            } else {
+                return `${(feet / 5280 / 1000000000).toFixed(2)} billion miles`;
+            }
+        }
+
+        function calculateDistances() {
+            const now = new Date();
+            const secondsElapsed = (now - startTime) / 1000;
+
+            // Calculate distances in feet
+            const rotationDistance = EARTH_ROTATION_SPEED * secondsElapsed;
+            const orbitalDistance = EARTH_ORBITAL_SPEED * secondsElapsed;
+            const galacticDistance = SOLAR_SYSTEM_SPEED * secondsElapsed;
+            const localGroupDistance = LOCAL_GROUP_SPEED * secondsElapsed;
+            const totalDistance = rotationDistance + orbitalDistance + galacticDistance + localGroupDistance;
+
+            // Update DOM
+            document.querySelector('#earthRotation .distance').textContent = formatDistance(rotationDistance);
+            document.querySelector('#solarOrbit .distance').textContent = formatDistance(orbitalDistance);
+            document.querySelector('#galacticOrbit .distance').textContent = formatDistance(galacticDistance);
+            document.querySelector('#localGroup .distance').textContent = formatDistance(localGroupDistance);
+            document.querySelector('#total .distance').textContent = formatDistance(totalDistance);
+        }
+
+        // Update every 100ms
+        setInterval(calculateDistances, 100);
+
+        // Initial calculation
+        calculateDistances();
+    </script>
+</body>
+</html>
