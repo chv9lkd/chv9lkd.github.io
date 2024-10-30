@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weekly Planner</title>
     <style>
-        /* System Light/Dark Theme Styling */
+        /* Theme Variables */
         :root {
             --background-light: #f0f2f5;
             --background-dark: #1e1e2f;
@@ -14,13 +14,14 @@
             --text-light: #333;
             --text-dark: #ddd;
             --accent: #4a90e2;
+            --completed: #4caf50;
             --border-light: #ddd;
             --border-dark: #444;
         }
-        
-        /* Apply color scheme based on system preferences */
+
+        /* Apply theme based on system preference */
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -30,7 +31,7 @@
             color: var(--text-light);
             transition: background-color 0.3s, color 0.3s;
         }
-        
+
         @media (prefers-color-scheme: dark) {
             body {
                 background-color: var(--background-dark);
@@ -38,10 +39,13 @@
             }
         }
 
+        /* Header Styling */
         .header {
             text-align: center;
             margin: 20px;
             font-size: 24px;
+            font-family: 'Segoe UI', sans-serif;
+            font-weight: 300;
             color: var(--accent);
         }
 
@@ -52,16 +56,17 @@
             width: 90vw;
             max-width: 1000px;
         }
-        
+
+        /* Day Styling */
         .day {
             background-color: var(--card-light);
             padding: 15px;
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: background-color 0.3s, box-shadow 0.3s;
             min-height: 220px;
             display: flex;
             flex-direction: column;
+            transition: background-color 0.3s, box-shadow 0.3s;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -81,18 +86,13 @@
         .tasks {
             flex-grow: 1;
             padding-top: 10px;
-            border-top: 1px solid var(--border-light);
         }
 
-        @media (prefers-color-scheme: dark) {
-            .tasks {
-                border-top: 1px solid var(--border-dark);
-            }
-        }
-
+        /* Task Styling */
         .task {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             padding: 8px 10px;
             background-color: rgba(74, 144, 226, 0.1);
             margin: 5px 0;
@@ -101,20 +101,21 @@
             transition: background-color 0.3s;
         }
 
-        .task.dragging {
-            opacity: 0.6;
+        .task.completed {
+            background-color: var(--completed);
+            color: #fff;
+            text-decoration: line-through;
         }
 
-        .task input[type="text"] {
-            border: none;
-            outline: none;
-            width: 100%;
-            background: transparent;
-            color: inherit;
-            font-size: 14px;
+        .task input[type="checkbox"] {
+            margin-right: 8px;
         }
 
-        .task button {
+        .task label {
+            flex-grow: 1;
+        }
+
+        .task button, .task .repeat-toggle {
             background: none;
             border: none;
             color: #888;
@@ -144,41 +145,23 @@
     </style>
 </head>
 <body>
-    <div class="header" id="header">
-        <!-- Header showing the week date range will be populated by JavaScript -->
-    </div>
-    <div class="planner" id="planner">
-        <!-- JavaScript will populate days dynamically -->
-    </div>
+    <div class="header" id="header"></div>
+    <div class="planner" id="planner"></div>
 
     <script>
-        // JavaScript for functionality
         const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
-        // Get the start and end dates for the current week
+        // Function to calculate the current week range
         function getCurrentWeekDates() {
             const today = new Date();
             const first = today.getDate() - today.getDay() + 1;
-            const last = first + 6;
             const startOfWeek = new Date(today.setDate(first)).toDateString();
-            const endOfWeek = new Date(today.setDate(last)).toDateString();
+            const endOfWeek = new Date(today.setDate(first + 6)).toDateString();
             return `${startOfWeek} - ${endOfWeek}`;
         }
 
-        // Show current week dates in the header
         function updateHeader() {
             document.getElementById("header").textContent = `Week of ${getCurrentWeekDates()}`;
-        }
-
-        // Reset tasks at the beginning of each week
-        function resetTasks() {
-            const savedWeek = localStorage.getItem("week");
-            const currentWeek = getCurrentWeekDates();
-
-            if (savedWeek !== currentWeek) {
-                localStorage.clear();
-                localStorage.setItem("week", currentWeek);
-            }
         }
 
         function renderPlanner() {
@@ -186,7 +169,7 @@
             daysOfWeek.forEach(day => {
                 const dayContainer = document.createElement("div");
                 dayContainer.classList.add("day");
-                dayContainer.innerHTML = `<h3>${day}</h3><div class="tasks" id="${day}-tasks" ondragover="allowDrop(event)" ondrop="dropTask(event)"></div>
+                dayContainer.innerHTML = `<h3>${day}</h3><div class="tasks" id="${day}-tasks"></div>
                                           <input type="text" placeholder="Add a task..." class="add-task" onkeydown="addTask(event, '${day}')">`;
                 planner.appendChild(dayContainer);
             });
@@ -196,69 +179,76 @@
             if (event.key === "Enter" && event.target.value.trim() !== "") {
                 const taskText = event.target.value;
                 const taskContainer = document.getElementById(`${day}-tasks`);
-                const taskDiv = createTaskElement(taskText);
+                const taskDiv = createTaskElement(taskText, day);
                 taskContainer.appendChild(taskDiv);
                 event.target.value = "";
             }
         }
 
-        function createTaskElement(text) {
+        function createTaskElement(text, day) {
             const taskDiv = document.createElement("div");
             taskDiv.classList.add("task");
-            taskDiv.draggable = true;
-            taskDiv.ondragstart = dragStart;
-            taskDiv.ondragend = dragEnd;
 
-            const taskInput = document.createElement("input");
-            taskInput.type = "text";
-            taskInput.value = text;
-            taskInput.setAttribute("readonly", true);
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.onclick = () => taskDiv.classList.toggle("completed");
+
+            const label = document.createElement("label");
+            label.textContent = text;
+
+            const repeatButton = document.createElement("button");
+            repeatButton.textContent = "⟳";
+            repeatButton.classList.add("repeat-toggle");
+            repeatButton.onclick = () => toggleRepeat(taskDiv, day);
 
             const deleteButton = document.createElement("button");
             deleteButton.innerHTML = "&#10005;";
             deleteButton.onclick = () => taskDiv.parentElement.removeChild(taskDiv);
 
-            taskDiv.appendChild(taskInput);
+            taskDiv.appendChild(checkbox);
+            taskDiv.appendChild(label);
+            taskDiv.appendChild(repeatButton);
             taskDiv.appendChild(deleteButton);
 
             return taskDiv;
         }
 
-        // Drag-and-Drop Handlers
-        function dragStart(event) {
-            event.target.classList.add("dragging");
-            event.dataTransfer.setData("text/plain", event.target.querySelector("input[type='text']").value);
-            setTimeout(() => event.target.style.display = "none", 0);
+        function toggleRepeat(task, day) {
+            const repeat = task.getAttribute("data-repeat") === "true";
+            task.setAttribute("data-repeat", !repeat);
+            task.querySelector(".repeat-toggle").style.color = !repeat ? "var(--accent)" : "#888";
+            // Save to local storage, so recurring tasks persist
+            saveRecurringTask(task, day, !repeat);
         }
 
-        function dragEnd(event) {
-            event.target.classList.remove("dragging");
-            event.target.style.display = "flex";
+        function saveRecurringTask(task, day, isRepeating) {
+            const tasks = JSON.parse(localStorage.getItem("recurringTasks")) || {};
+            if (isRepeating) {
+                tasks[day] = tasks[day] || [];
+                tasks[day].push(task.querySelector("label").textContent);
+            } else {
+                tasks[day] = tasks[day].filter(t => t !== task.querySelector("label").textContent);
+            }
+            localStorage.setItem("recurringTasks", JSON.stringify(tasks));
         }
 
-        function allowDrop(event) {
-            event.preventDefault();
-        }
-
-        function dropTask(event) {
-            event.preventDefault();
-            const taskText = event.dataTransfer.getData("text/plain");
-            const taskContainer = event.currentTarget;
-            const taskDiv = createTaskElement(taskText);
-            taskContainer.appendChild(taskDiv);
-
-            // Remove the dragged element from its original container
-            const originalTask = document.querySelector(".task.dragging");
-            if (originalTask && originalTask.parentElement !== taskContainer) {
-                originalTask.parentElement.removeChild(originalTask);
+        function loadRecurringTasks() {
+            const tasks = JSON.parse(localStorage.getItem("recurringTasks")) || {};
+            for (const [day, taskList] of Object.entries(tasks)) {
+                taskList.forEach(taskText => {
+                    const taskContainer = document.getElementById(`${day}-tasks`);
+                    const taskDiv = createTaskElement(taskText, day);
+                    taskDiv.setAttribute("data-repeat", true);
+                    taskDiv.querySelector(".repeat-toggle").style.color = "var(--accent)";
+                    taskContainer.appendChild(taskDiv);
+                });
             }
         }
 
-        // Initialize the planner on page load
         document.addEventListener("DOMContentLoaded", () => {
             updateHeader();
-            resetTasks();
             renderPlanner();
+            loadRecurringTasks();
         });
     </script>
 </body>
