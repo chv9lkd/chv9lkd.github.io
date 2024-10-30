@@ -5,20 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weekly Planner</title>
     <style>
-        /* CSS Styling */
+        /* Responsive CSS Styling */
         body {
             font-family: Arial, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
             background-color: #f0f2f5;
         }
         
         .planner {
             display: grid;
-            grid-template-columns: repeat(7, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 10px;
             width: 90vw;
             max-width: 1000px;
@@ -29,6 +29,10 @@
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .day h3 {
@@ -38,12 +42,21 @@
             text-align: center;
         }
 
+        .tasks {
+            flex-grow: 1;
+            min-height: 100px;
+        }
+
         .task {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 5px 0;
             border-bottom: 1px solid #ddd;
+            cursor: grab;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            margin-bottom: 5px;
         }
 
         .task:last-child {
@@ -54,6 +67,7 @@
             border: none;
             outline: none;
             width: 80%;
+            background: none;
         }
 
         .task button {
@@ -72,6 +86,10 @@
             outline: none;
             font-size: 14px;
         }
+
+        .task.dragging {
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body>
@@ -88,7 +106,7 @@
             daysOfWeek.forEach(day => {
                 const dayContainer = document.createElement("div");
                 dayContainer.classList.add("day");
-                dayContainer.innerHTML = `<h3>${day}</h3><div class="tasks" id="${day}-tasks"></div>
+                dayContainer.innerHTML = `<h3>${day}</h3><div class="tasks" id="${day}-tasks" ondragover="allowDrop(event)" ondrop="dropTask(event)"></div>
                                           <input type="text" placeholder="Add a task..." class="add-task" onkeydown="addTask(event, '${day}')">`;
                 planner.appendChild(dayContainer);
             });
@@ -99,23 +117,63 @@
                 const taskText = event.target.value;
                 const taskContainer = document.getElementById(`${day}-tasks`);
 
-                const taskDiv = document.createElement("div");
-                taskDiv.classList.add("task");
+                const taskDiv = createTaskElement(taskText);
 
-                const taskInput = document.createElement("input");
-                taskInput.type = "text";
-                taskInput.value = taskText;
-                taskInput.setAttribute("readonly", true);
-
-                const deleteButton = document.createElement("button");
-                deleteButton.innerHTML = "&#10005;";
-                deleteButton.onclick = () => taskContainer.removeChild(taskDiv);
-
-                taskDiv.appendChild(taskInput);
-                taskDiv.appendChild(deleteButton);
                 taskContainer.appendChild(taskDiv);
-
                 event.target.value = "";
+            }
+        }
+
+        function createTaskElement(text) {
+            const taskDiv = document.createElement("div");
+            taskDiv.classList.add("task");
+            taskDiv.draggable = true;
+            taskDiv.ondragstart = dragStart;
+            taskDiv.ondragend = dragEnd;
+
+            const taskInput = document.createElement("input");
+            taskInput.type = "text";
+            taskInput.value = text;
+            taskInput.setAttribute("readonly", true);
+
+            const deleteButton = document.createElement("button");
+            deleteButton.innerHTML = "&#10005;";
+            deleteButton.onclick = () => taskDiv.parentElement.removeChild(taskDiv);
+
+            taskDiv.appendChild(taskInput);
+            taskDiv.appendChild(deleteButton);
+
+            return taskDiv;
+        }
+
+        // Drag-and-Drop Handlers
+        function dragStart(event) {
+            event.target.classList.add("dragging");
+            event.dataTransfer.setData("text/plain", event.target.querySelector("input[type='text']").value);
+            setTimeout(() => event.target.style.display = "none", 0);
+        }
+
+        function dragEnd(event) {
+            event.target.classList.remove("dragging");
+            event.target.style.display = "flex";
+        }
+
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function dropTask(event) {
+            event.preventDefault();
+            const taskText = event.dataTransfer.getData("text/plain");
+            const taskContainer = event.currentTarget;
+            const taskDiv = createTaskElement(taskText);
+
+            taskContainer.appendChild(taskDiv);
+
+            // Remove the dragged element from its original container
+            const originalTask = document.querySelector(".task.dragging");
+            if (originalTask && originalTask.parentElement !== taskContainer) {
+                originalTask.parentElement.removeChild(originalTask);
             }
         }
 
