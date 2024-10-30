@@ -5,69 +5,113 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weekly Planner</title>
     <style>
-        /* Responsive CSS Styling */
+        /* System Light/Dark Theme Styling */
+        :root {
+            --background-light: #f0f2f5;
+            --background-dark: #1e1e2f;
+            --card-light: #ffffff;
+            --card-dark: #2a2a3e;
+            --text-light: #333;
+            --text-dark: #ddd;
+            --accent: #4a90e2;
+            --border-light: #ddd;
+            --border-dark: #444;
+        }
+        
+        /* Apply color scheme based on system preferences */
         body {
             font-family: Arial, sans-serif;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background-color: #f0f2f5;
+            background-color: var(--background-light);
+            color: var(--text-light);
+            transition: background-color 0.3s, color 0.3s;
         }
         
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: var(--background-dark);
+                color: var(--text-dark);
+            }
+        }
+
+        .header {
+            text-align: center;
+            margin: 20px;
+            font-size: 24px;
+            color: var(--accent);
+        }
+
         .planner {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 10px;
             width: 90vw;
             max-width: 1000px;
         }
         
         .day {
-            background-color: #fff;
+            background-color: var(--card-light);
             padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            min-height: 200px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: background-color 0.3s, box-shadow 0.3s;
+            min-height: 220px;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .day {
+                background-color: var(--card-dark);
+                box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            }
         }
 
         .day h3 {
             margin: 0 0 10px;
             font-size: 18px;
-            color: #333;
+            color: var(--accent);
             text-align: center;
         }
 
         .tasks {
             flex-grow: 1;
-            min-height: 100px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-light);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .tasks {
+                border-top: 1px solid var(--border-dark);
+            }
         }
 
         .task {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 5px 0;
-            border-bottom: 1px solid #ddd;
+            padding: 8px 10px;
+            background-color: rgba(74, 144, 226, 0.1);
+            margin: 5px 0;
+            border-radius: 8px;
             cursor: grab;
-            background-color: #f9f9f9;
-            border-radius: 4px;
-            margin-bottom: 5px;
+            transition: background-color 0.3s;
         }
 
-        .task:last-child {
-            border-bottom: none;
+        .task.dragging {
+            opacity: 0.6;
         }
 
         .task input[type="text"] {
             border: none;
             outline: none;
-            width: 80%;
-            background: none;
+            width: 100%;
+            background: transparent;
+            color: inherit;
+            font-size: 14px;
         }
 
         .task button {
@@ -75,24 +119,34 @@
             border: none;
             color: #888;
             cursor: pointer;
+            font-size: 18px;
+            margin-left: 8px;
         }
 
         .add-task {
             margin-top: 10px;
             width: 100%;
             padding: 5px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
+            border-radius: 6px;
+            border: 1px solid var(--border-light);
             outline: none;
             font-size: 14px;
+            color: var(--text-light);
+            background-color: rgba(74, 144, 226, 0.05);
         }
 
-        .task.dragging {
-            opacity: 0.5;
+        @media (prefers-color-scheme: dark) {
+            .add-task {
+                border: 1px solid var(--border-dark);
+                color: var(--text-dark);
+            }
         }
     </style>
 </head>
 <body>
+    <div class="header" id="header">
+        <!-- Header showing the week date range will be populated by JavaScript -->
+    </div>
     <div class="planner" id="planner">
         <!-- JavaScript will populate days dynamically -->
     </div>
@@ -100,6 +154,32 @@
     <script>
         // JavaScript for functionality
         const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+        // Get the start and end dates for the current week
+        function getCurrentWeekDates() {
+            const today = new Date();
+            const first = today.getDate() - today.getDay() + 1;
+            const last = first + 6;
+            const startOfWeek = new Date(today.setDate(first)).toDateString();
+            const endOfWeek = new Date(today.setDate(last)).toDateString();
+            return `${startOfWeek} - ${endOfWeek}`;
+        }
+
+        // Show current week dates in the header
+        function updateHeader() {
+            document.getElementById("header").textContent = `Week of ${getCurrentWeekDates()}`;
+        }
+
+        // Reset tasks at the beginning of each week
+        function resetTasks() {
+            const savedWeek = localStorage.getItem("week");
+            const currentWeek = getCurrentWeekDates();
+
+            if (savedWeek !== currentWeek) {
+                localStorage.clear();
+                localStorage.setItem("week", currentWeek);
+            }
+        }
 
         function renderPlanner() {
             const planner = document.getElementById("planner");
@@ -116,9 +196,7 @@
             if (event.key === "Enter" && event.target.value.trim() !== "") {
                 const taskText = event.target.value;
                 const taskContainer = document.getElementById(`${day}-tasks`);
-
                 const taskDiv = createTaskElement(taskText);
-
                 taskContainer.appendChild(taskDiv);
                 event.target.value = "";
             }
@@ -167,7 +245,6 @@
             const taskText = event.dataTransfer.getData("text/plain");
             const taskContainer = event.currentTarget;
             const taskDiv = createTaskElement(taskText);
-
             taskContainer.appendChild(taskDiv);
 
             // Remove the dragged element from its original container
@@ -178,7 +255,11 @@
         }
 
         // Initialize the planner on page load
-        document.addEventListener("DOMContentLoaded", renderPlanner);
+        document.addEventListener("DOMContentLoaded", () => {
+            updateHeader();
+            resetTasks();
+            renderPlanner();
+        });
     </script>
 </body>
 </html>
