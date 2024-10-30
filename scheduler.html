@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Task Scheduler</title>
+<title>Interactive Task Scheduler</title>
 <style>
   body {
     font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
+    background-color: #f0f0f0;
     display: flex;
     justify-content: center;
-    background-color: #f0f0f0;
+    margin: 0;
+    padding: 0;
   }
   .container {
     width: 400px;
@@ -26,6 +26,10 @@
     text-align: center;
     background-color: #333;
     color: #fff;
+  }
+  .days-container {
+    max-height: 500px;
+    overflow-y: auto;
   }
   .day {
     border-top: 1px solid #ddd;
@@ -54,18 +58,22 @@
     flex: 1;
     cursor: pointer;
   }
+  .task.complete span {
+    text-decoration: line-through;
+    color: #aaa;
+  }
   .highlight {
     background-color: #fdf7bb;
     font-weight: bold;
   }
-  .complete {
-    text-decoration: line-through;
-    color: #aaa;
-  }
-  .day[data-day="someday"] {
-    color: #bbb;
-  }
   .task input[type="checkbox"] {
+    cursor: pointer;
+  }
+  .delete-btn {
+    background: transparent;
+    border: none;
+    color: red;
+    font-size: 16px;
     cursor: pointer;
   }
   .instructions {
@@ -81,105 +89,137 @@
 <div class="container">
   <div class="header">
     <h2>Task Scheduler</h2>
+    <input type="date" id="taskDate" value="">
+    <button onclick="addTask()">Add Task</button>
   </div>
 
-  <div class="day" data-day="2024-11-28">
-    <h3>28.10</h3>
-    <ul class="task-list">
-      <li class="task">
-        <input type="checkbox" onclick="toggleComplete(this)">
-        <span onclick="editTask(this)">Hover to complete</span>
-      </li>
-      <li class="task">
-        <input type="checkbox" onclick="toggleComplete(this)">
-        <span onclick="editTask(this)">Click to edit</span>
-      </li>
-      <li class="task">
-        <input type="checkbox" onclick="toggleComplete(this)">
-        <span onclick="editTask(this)">Drag to other day</span>
-      </li>
-    </ul>
-  </div>
-
-  <div class="day" data-day="2024-11-29">
-    <h3>29.10</h3>
-    <ul class="task-list">
-      <li class="task highlight">
-        <input type="checkbox" onclick="toggleComplete(this)">
-        <span onclick="editTask(this)">Choose from colors</span>
-      </li>
-      <li class="task">
-        <input type="checkbox" onclick="toggleComplete(this)">
-        <span onclick="editTask(this)">Hope you like 😉</span>
-      </li>
-    </ul>
-  </div>
-
-  <div class="day" data-day="2024-11-30">
-    <h3>30.10</h3>
-    <ul class="task-list">
-      <li class="task">
-        <input type="checkbox" onclick="toggleComplete(this)">
-        <span onclick="editTask(this)">That's all!</span>
-      </li>
-    </ul>
-  </div>
-
-  <div class="day" data-day="2024-11-01">
-    <h3>01.11</h3>
-    <ul class="task-list">
-      <li class="task">
-        <input type="checkbox" onclick="toggleComplete(this)">
-        <span onclick="editTask(this)">Remember to save 👆</span>
-      </li>
-    </ul>
+  <div class="days-container" id="daysContainer">
+    <!-- Days will be dynamically populated here -->
   </div>
 
   <div class="instructions">
-    <p>Click on a task to edit, and drag tasks to rearrange.</p>
+    <p>Click on a task to edit, and drag tasks to rearrange across days.</p>
   </div>
 </div>
 
 <script>
-  function toggleComplete(checkbox) {
-    const taskText = checkbox.nextElementSibling;
-    taskText.classList.toggle("complete");
-  }
+  // In-memory storage for tasks
+  const tasks = {};
 
-  function editTask(element) {
-    const newTask = prompt("Edit task:", element.innerText);
-    if (newTask) {
-      element.innerText = newTask;
+  // Initialize days based on current week
+  function initializeDays() {
+    const daysContainer = document.getElementById('daysContainer');
+    daysContainer.innerHTML = '';
+    const today = new Date();
+
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const dayId = formatDateId(date);
+      tasks[dayId] = tasks[dayId] || []; // Initialize empty task list if not present
+
+      const dayElement = document.createElement('div');
+      dayElement.classList.add('day');
+      dayElement.dataset.date = dayId;
+      dayElement.innerHTML = `<h3>${dayId}</h3><ul class="task-list" id="list-${dayId}"></ul>`;
+      daysContainer.appendChild(dayElement);
+      populateTasks(dayId);
     }
   }
 
-  // Drag-and-drop functionality
-  document.querySelectorAll('.task').forEach(task => {
-    task.setAttribute('draggable', true);
-    task.addEventListener('dragstart', dragStart);
-  });
+  // Format date to 'DD.MM' format
+  function formatDateId(date) {
+    return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}`;
+  }
 
-  document.querySelectorAll('.task-list').forEach(list => {
-    list.addEventListener('dragover', dragOver);
+  // Add new task
+  function addTask() {
+    const dateInput = document.getElementById('taskDate').value;
+    const date = new Date(dateInput);
+
+    if (isNaN(date.getTime())) {
+      alert('Please select a valid date.');
+      return;
+    }
+
+    const taskText = prompt('Enter task description:');
+    if (!taskText) return;
+
+    const dayId = formatDateId(date);
+    tasks[dayId] = tasks[dayId] || [];
+    tasks[dayId].push({ text: taskText, completed: false });
+    populateTasks(dayId);
+  }
+
+  // Populate tasks for a given day
+  function populateTasks(dayId) {
+    const taskList = document.getElementById(`list-${dayId}`);
+    if (!taskList) return;
+
+    taskList.innerHTML = ''; // Clear current list
+
+    tasks[dayId].forEach((task, index) => {
+      const taskElement = document.createElement('li');
+      taskElement.classList.add('task');
+      if (task.completed) taskElement.classList.add('complete');
+      taskElement.draggable = true;
+      taskElement.addEventListener('dragstart', (e) => dragStart(e, dayId, index));
+      
+      taskElement.innerHTML = `
+        <input type="checkbox" onclick="toggleComplete('${dayId}', ${index})" ${task.completed ? 'checked' : ''}>
+        <span onclick="editTask('${dayId}', ${index})">${task.text}</span>
+        <button class="delete-btn" onclick="deleteTask('${dayId}', ${index})">&times;</button>
+      `;
+      taskList.appendChild(taskElement);
+    });
+  }
+
+  // Toggle task completion
+  function toggleComplete(dayId, index) {
+    tasks[dayId][index].completed = !tasks[dayId][index].completed;
+    populateTasks(dayId);
+  }
+
+  // Edit task description
+  function editTask(dayId, index) {
+    const newTaskText = prompt('Edit task:', tasks[dayId][index].text);
+    if (newTaskText !== null) {
+      tasks[dayId][index].text = newTaskText;
+      populateTasks(dayId);
+    }
+  }
+
+  // Delete task
+  function deleteTask(dayId, index) {
+    tasks[dayId].splice(index, 1);
+    populateTasks(dayId);
+  }
+
+  // Drag-and-drop functionality
+  function dragStart(e, dayId, index) {
+    e.dataTransfer.setData('text/plain', JSON.stringify({ dayId, index }));
+  }
+
+  document.querySelectorAll('.task-list').forEach((list) => {
+    list.addEventListener('dragover', (e) => e.preventDefault());
     list.addEventListener('drop', dropTask);
   });
 
-  function dragStart(e) {
-    e.dataTransfer.setData('text/plain', e.target.outerHTML);
-    e.target.classList.add('dragging');
-  }
-
-  function dragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  }
-
   function dropTask(e) {
     e.preventDefault();
-    const draggedHTML = e.dataTransfer.getData('text/plain');
-    e.target.closest('.task-list').insertAdjacentHTML('beforeend', draggedHTML);
-    document.querySelector('.dragging').remove();
+    const { dayId, index } = JSON.parse(e.dataTransfer.getData('text/plain'));
+    const targetDayId = e.target.closest('.day').dataset.date;
+
+    if (dayId === targetDayId) return; // Prevent drop on same day
+
+    const [movedTask] = tasks[dayId].splice(index, 1);
+    tasks[targetDayId].push(movedTask);
+    populateTasks(dayId);
+    populateTasks(targetDayId);
   }
+
+  // Initialize on load
+  initializeDays();
 </script>
 
 </body>
