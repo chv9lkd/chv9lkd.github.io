@@ -115,6 +115,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            z-index: 1000;
         }
         .hidden { display: none; }
     </style>
@@ -193,10 +194,12 @@
             const cookieBanner = document.getElementById('cookieBanner');
             function dismissBanner() {
                 cookieBanner.classList.add('hidden');
+                cookieBanner.style.display = 'none';
                 localStorage.setItem('cookiesAccepted', 'true');
             }
             if (!localStorage.getItem('cookiesAccepted')) {
                 cookieBanner.classList.remove('hidden');
+                cookieBanner.style.display = 'flex';
             }
 
             // Todo List
