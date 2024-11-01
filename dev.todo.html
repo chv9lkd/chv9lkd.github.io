@@ -63,6 +63,15 @@
             margin-bottom: 1rem;
         }
 
+        .input-group {
+            display: none;
+            flex-direction: column;
+        }
+
+        .active .input-group {
+            display: flex;
+        }
+
         input[type="text"] {
             flex: 1;
             padding: 0.5rem;
@@ -89,10 +98,12 @@
         }
 
         .profile-card {
-            padding: 1rem;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 0.5rem;
             background: var(--bg-card);
             border-radius: 6px;
-            margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
             gap: 1rem;
@@ -123,19 +134,25 @@
 <body>
     <div class="container">
         <h1>Todo List</h1>
-        <div class="profile-group">
-            <input type="text" id="profileNameInput" placeholder="Enter your name">
-            <button id="saveProfileButton" class="button">Save Profile</button>
-        </div>
+        
+        <!-- Profile Card -->
         <div id="profileCard" class="profile-card" style="display: none;">
-            <p><strong>Welcome back, </strong><span id="profileName"></span>!</p>
+            <p><strong>Welcome, </strong><span id="profileName"></span>!</p>
             <button id="deleteProfileButton" class="button" style="background-color: var(--btn-delete);">Delete Profile</button>
         </div>
 
-        <div class="input-group">
+        <!-- Profile Setup -->
+        <div class="profile-group" id="profileSetup">
+            <input type="text" id="profileNameInput" placeholder="Enter your name">
+            <button id="saveProfileButton" class="button">Save Profile</button>
+        </div>
+
+        <!-- Todo Input -->
+        <div class="input-group active" id="todoSection">
             <input type="text" id="todoInput" placeholder="Add a new todo">
             <button id="addButton" class="button">Add</button>
         </div>
+        
         <ul id="todoList"></ul>
     </div>
 
@@ -152,8 +169,13 @@
                 deleteProfileButton: document.getElementById('deleteProfileButton'),
                 profileCard: document.getElementById('profileCard'),
                 profileName: document.getElementById('profileName'),
+                profileSetup: document.getElementById('profileSetup'),
                 cookieModal: document.getElementById('cookieModal'),
-                dismissCookieButton: document.getElementById('dismissCookieButton')
+                dismissCookieButton: document.getElementById('dismissCookieButton'),
+                todoSection: document.getElementById('todoSection'),
+                todoInput: document.getElementById('todoInput'),
+                addButton: document.getElementById('addButton'),
+                todoList: document.getElementById('todoList')
             };
 
             const PROFILE_KEY = 'userProfile';
@@ -162,8 +184,12 @@
             function loadProfile() {
                 const profile = JSON.parse(localStorage.getItem(PROFILE_KEY));
                 if (profile) {
+                    elements.profileSetup.style.display = 'none';
                     elements.profileCard.style.display = 'flex';
+                    elements.todoSection.classList.add('active');
                     elements.profileName.textContent = profile.name;
+                } else {
+                    elements.todoSection.classList.remove('active');
                 }
             }
 
@@ -178,6 +204,8 @@
             function deleteProfile() {
                 localStorage.removeItem(PROFILE_KEY);
                 elements.profileCard.style.display = 'none';
+                elements.profileSetup.style.display = 'flex';
+                elements.todoSection.classList.remove('active');
                 elements.profileNameInput.value = '';
             }
 
