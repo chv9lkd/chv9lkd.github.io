@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List</title>
+    <style>
+        :root {
+            --bg-main: #f5f5f5;
+            --bg-card: #ffffff;
+            --bg-item: #f8fafc;
+            --text-primary: #2d3748;
+            --text-secondary: #4a5568;
+            --border-color: #e2e8f0;
+            --btn-primary: #4299e1;
+            --btn-primary-hover: #3182ce;
+            --btn-delete: #fc8181;
+            --btn-delete-hover: #f56565;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --checkbox-bg: #fff;
+            --recurring-badge: #9ae6b4;
+            --persist-badge: #fbd38d;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-main: #1a1a1a;
+                --bg-card: #2d2d2d;
+                --bg-item: #363636;
+                --text-primary: #e2e8f0;
+                --text-secondary: #a0aec0;
+                --border-color: #4a5568;
+                --btn-primary: #3182ce;
+                --btn-primary-hover: #2c5282;
+                --btn-delete: #e53e3e;
+                --btn-delete-hover: #c53030;
+                --shadow-color: rgba(0, 0, 0, 0.3);
+                --checkbox-bg: #2d2d2d;
+                --recurring-badge: #2f855a;
+                --persist-badge: #975a16;
+            }
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            background-color: var(--bg-main);
+            color: var(--text-primary);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .container {
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px var(--shadow-color);
+        }
+
+        h1 {
+            color: var(--text-primary);
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+            background-color: var(--bg-item);
+            color: var(--text-primary);
+        }
+
+        .button {
+            background-color: var(--btn-primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .button:hover {
+            background-color: var(--btn-primary-hover);
+        }
+
+        .delete-btn {
+            margin-left: auto;
+            background-color: var(--btn-delete);
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .delete-btn:hover {
+            background-color: var(--btn-delete-hover);
+        }
+
+        .task-options {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 0.5rem;
+            background: var(--bg-item);
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+
+        .task-option {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        select {
+            padding: 0.25rem;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            background: var(--bg-item);
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+            gap: 0.5rem;
+            transition: background-color 0.3s ease;
+        }
+
+        li.completed {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .task-text {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.125rem 0.375rem;
+            border-radius: 9999px;
+            font-weight: 500;
+        }
+
+        .recurring-badge {
+            background-color: var(--recurring-badge);
+            color: var(--bg-card);
+        }
+
+        .persist-badge {
+            background-color: var(--persist-badge);
+            color: var(--bg-card);
+        }
+
+        .checkbox {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            accent-color: var(--btn-primary);
+        }
+
+        .time-left {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-top: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-secondary);
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Todo List</h1>
+        <div class="input-group">
+            <input type="text" id="todoInput" placeholder="Add a new todo" aria-label="New task">
+            <button id="addButton" class="button" aria-label="Add task">Add</button>
+        </div>
+        <div class="task-options">
+            <label class="task-option">
+                <input type="checkbox" id="persistTask"> Persist to next day
+            </label>
+            <label class="task-option">
+                <input type="checkbox" id="recurringTask"> Recurring on
+                <select id="recurringDay" disabled>
+                    <option value="">Select day</option>
+                    <option value="0">Sunday</option>
+                    <option value="1">Monday</option>
+                    <option value="2">Tuesday</option>
+                    <option value="3">Wednesday</option>
+                    <option value="4">Thursday</option>
+                    <option value="5">Friday</option>
+                    <option value="6">Saturday</option>
+                </select>
+            </label>
+        </div>
+        <ul id="todoList" aria-label="Task list"></ul>
+        <p id="timeLeft" class="time-left"></p>
+        <p id="emptyState" class="empty-state">No tasks yet. Add a new one above!</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let todos = [];
+            const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            
+            const elements = {
+                todoInput: document.getElementById('todoInput'),
+                addButton: document.getElementById('addButton'),
+                persistTask: document.getElementById('persistTask'),
+                recurringTask: document.getElementById('recurringTask'),
+                recurringDay: document.getElementById('recurringDay'),
+                todoList: document.getElementById('todoList'),
+                timeLeft: document.getElementById('timeLeft'),
+                emptyState: document.getElementById('emptyState')
+            };
+
+            elements.recurringTask.addEventListener('change', function() {
+                elements.recurringDay.disabled = !this.checked;
+                if (!this.checked) elements.recurringDay.value = '';
+            });
+
+            function getFromStorage(key, defaultValue) {
+                try {
+                    const item = localStorage.getItem(key);
+                    return item ? JSON.parse(item) : defaultValue;
+                } catch (error) {
+                    console.error('Error reading from localStorage:', error);
+                    return defaultValue;
+                }
+            }
+
+            function saveToStorage(key, value) {
+                try {
+                    localStorage.setItem(key, JSON.stringify(value));
+                } catch (error) {
+                    console.error('Error saving to localStorage:', error);
+                }
+            }
+
+            function initializeTodos() {
+                const lastDate = getFromStorage('lastDate', '');
+                const today = new Date().toDateString();
+                todos = getFromStorage('todos', []);
+
+                if (lastDate !== today) {
+                    const persistedTodos = todos.filter(todo => todo.persist && !todo.completed);
+                    const recurringTodos = getFromStorage('recurringTodos', []);
+
+                    const currentDayOfWeek = new Date().getDay();
+                    const todaysRecurringTodos = recurringTodos.filter(todo => todo.recurringDay == currentDayOfWeek);
+
+                    todos = [...persistedTodos, ...todaysRecurringTodos];
+                    saveToStorage('todos', todos);
+                    saveToStorage('lastDate', today);
+                }
+                renderTodos();
+            }
+
+            function addTodo() {
+                const text = elements.todoInput.value.trim();
+                if (!text) return;
+
+                const newTodo = {
+                    text,
+                    completed: false,
+                    id: Date.now(),
+                    persist: elements.persistTask.checked,
+                    recurringDay: elements.recurringTask.checked ? elements.recurringDay.value : undefined
+                };
+
+                if (newTodo.recurringDay !== undefined) {
+                    const recurringTodos = getFromStorage('recurringTodos', []);
+                    saveToStorage('recurringTodos', [...recurringTodos, newTodo]);
+                }
+
+                todos.push(newTodo);
+                saveToStorage('todos', todos);
+                resetForm();
+                renderTodos();
+            }
+
+            function deleteTodo(id) {
+                todos = todos.filter(todo => todo.id !== id);
+                saveToStorage('todos', todos);
+                renderTodos();
+            }
+
+            function toggleTodoCompletion(id) {
+                todos = todos.map(todo => todo.id === id ? { ...todo, completed: !todo.completed } : todo);
+                saveToStorage('todos', todos);
+                renderTodos();
+            }
+
+            function resetForm() {
+                elements.todoInput.value = '';
+                elements.persistTask.checked = false;
+                elements.recurringTask.checked = false;
+                elements.recurringDay.disabled = true;
+                elements.recurringDay.value = '';
+            }
+
+            function renderTodos() {
+                elements.todoList.innerHTML = '';
+                if (todos.length === 0) {
+                    elements.emptyState.style.display = 'block';
+                } else {
+                    elements.emptyState.style.display = 'none';
+                }
+
+                todos.forEach(todo => {
+                    const li = document.createElement('li');
+                    li.classList.toggle('completed', todo.completed);
+                    
+                    const label = document.createElement('label');
+                    label.className = 'task-text';
+
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'checkbox';
+                    checkbox.checked = todo.completed;
+                    checkbox.dataset.id = todo.id;
+                    checkbox.addEventListener('change', () => toggleTodoCompletion(todo.id));
+
+                    const span = document.createElement('span');
+                    span.textContent = todo.text;
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.dataset.id = todo.id;
+                    deleteBtn.addEventListener('click', () => deleteTodo(todo.id));
+
+                    label.append(checkbox, span);
+                    li.append(label);
+
+                    if (todo.recurringDay !== undefined) {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge recurring-badge';
+                        badge.textContent = `Repeats on ${DAYS[todo.recurringDay]}`;
+                        li.append(badge);
+                    }
+
+                    if (todo.persist) {
+                        const badge = document.createElement('span');
+                        badge.className = 'badge persist-badge';
+                        badge.textContent = 'Persistent';
+                        li.append(badge);
+                    }
+
+                    li.append(deleteBtn);
+                    elements.todoList.appendChild(li);
+                });
+            }
+
+            function showTimeLeft() {
+                const now = new Date();
+                const nextDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+                const hoursLeft = Math.floor((nextDay - now) / (1000 * 60 * 60));
+                elements.timeLeft.textContent = `Hours left in the day: ${hoursLeft}`;
+            }
+
+            elements.addButton.addEventListener('click', addTodo);
+            elements.todoInput.addEventListener('keypress', event => {
+                if (event.key === 'Enter') addTodo();
+            });
+
+            setInterval(showTimeLeft, 1000 * 60 * 60); // Update hourly
+            initializeTodos();
+        });
+    </script>
+</body>
+</html>
