@@ -3,105 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Todo List with Profiles</title>
+    <title>Elegant Todo List with Profiles</title>
     <style>
         :root {
-            --bg-main: #f5f5f5;
+            --bg-main: #fafafa;
             --bg-card: #ffffff;
-            --text-primary: #2d3748;
-            --btn-primary: #4299e1;
-            --shadow-color: rgba(0, 0, 0, 0.1);
+            --text-primary: #333;
+            --btn-primary: #007bff;
+            --shadow-color: rgba(0, 0, 0, 0.08);
+            --border-radius: 8px;
+            --spacing: 1.25rem;
         }
         @media (prefers-color-scheme: dark) {
             :root {
-                --bg-main: #1a1a1a;
-                --bg-card: #2d2d2d;
-                --text-primary: #e2e8f0;
-                --btn-primary: #3182ce;
-                --shadow-color: rgba(0, 0, 0, 0.3);
+                --bg-main: #1e1e1e;
+                --bg-card: #2a2a2a;
+                --text-primary: #f0f0f0;
+                --btn-primary: #66aaff;
+                --shadow-color: rgba(255, 255, 255, 0.1);
             }
         }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
         body {
-            font-family: sans-serif;
-            max-width: 600px;
-            margin: auto;
-            padding: 2rem;
+            font-family: Arial, sans-serif;
             background-color: var(--bg-main);
             color: var(--text-primary);
+            padding: 2rem 1rem;
+            display: flex;
+            justify-content: center;
+        }
+        .wrapper {
+            width: 100%;
+            max-width: 600px;
         }
         .container, .profile-container {
-            background: var(--bg-card);
-            padding: 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px var(--shadow-color);
-            margin-bottom: 1rem;
-            overflow: hidden;
+            background-color: var(--bg-card);
+            padding: var(--spacing);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px var(--shadow-color);
+            margin-bottom: var(--spacing);
+            transition: 0.3s;
         }
-        h1 { color: var(--text-primary); }
-        .input-group, .todo-item {
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: var(--spacing);
+        }
+        .input-group {
             display: flex;
-            align-items: center;
+            flex-direction: column;
             gap: 0.5rem;
-            flex-wrap: wrap;
+            margin-bottom: var(--spacing);
         }
-        .todo-list { list-style: none; padding: 0; margin: 0; }
+        .input-group input, select {
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .input-group input:focus, select:focus {
+            border-color: var(--btn-primary);
+        }
         .button {
-            background: var(--btn-primary);
-            color: white;
-            padding: 0.5rem 1rem;
+            background-color: var(--btn-primary);
+            color: #fff;
+            padding: 0.75rem;
             border: none;
             cursor: pointer;
-            border-radius: 4px;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: darken(var(--btn-primary), 10%);
+        }
+        .todo-list {
+            list-style: none;
+            padding: 0;
+        }
+        .todo-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            margin-bottom: 0.5rem;
+            transition: background 0.3s;
+        }
+        .todo-item:hover {
+            background: var(--shadow-color);
         }
         .dismiss {
-            display: none;
             position: fixed;
             bottom: 1rem;
             left: 50%;
             transform: translateX(-50%);
             background: #f56565;
             padding: 1rem;
-            border-radius: 8px;
-            color: white;
+            border-radius: var(--border-radius);
+            color: #fff;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        #profileSection.hidden, #cookieBanner.hidden { display: none; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
-    <!-- Cookie Banner -->
-    <div id="cookieBanner" class="dismiss">
-        This site uses cookies. By using this site, you consent to our use of cookies.
-        <button onclick="dismissBanner()">Dismiss</button>
-    </div>
-
-    <!-- Profile Section -->
-    <div id="profileSection" class="profile-container">
-        <h1>Profile</h1>
-        <div class="input-group">
-            <input type="text" id="nameInput" placeholder="Enter your name">
-            <button class="button" id="saveProfile">Save Profile</button>
+    <div class="wrapper">
+        <!-- Cookie Banner -->
+        <div id="cookieBanner" class="dismiss hidden">
+            <span>This site uses cookies. By using this site, you consent to our use of cookies.</span>
+            <button class="button" onclick="dismissBanner()">Dismiss</button>
         </div>
-        <p id="welcomeMessage"></p>
-    </div>
 
-    <!-- Todo List Section -->
-    <div id="todoSection" class="container" style="display: none;">
-        <h1>Todo List</h1>
-        <div class="input-group">
-            <input type="text" id="todoInput" placeholder="Add a new task">
-            <select id="repeatDay">
-                <option value="">No Repeat</option>
-                <option value="0">Sunday</option>
-                <option value="1">Monday</option>
-                <option value="2">Tuesday</option>
-                <option value="3">Wednesday</option>
-                <option value="4">Thursday</option>
-                <option value="5">Friday</option>
-                <option value="6">Saturday</option>
-            </select>
-            <button class="button" id="addButton">Add</button>
+        <!-- Profile Section -->
+        <div id="profileSection" class="profile-container">
+            <h1>Set Up Your Profile</h1>
+            <div class="input-group">
+                <input type="text" id="nameInput" placeholder="Enter your name">
+                <button class="button" id="saveProfile">Save Profile</button>
+            </div>
+            <p id="welcomeMessage"></p>
         </div>
-        <ul id="todoList" class="todo-list"></ul>
+
+        <!-- Todo List Section -->
+        <div id="todoSection" class="container hidden">
+            <h1>Todo List</h1>
+            <div class="input-group">
+                <input type="text" id="todoInput" placeholder="Add a new task">
+                <select id="repeatDay">
+                    <option value="">No Repeat</option>
+                    <option value="0">Sunday</option>
+                    <option value="1">Monday</option>
+                    <option value="2">Tuesday</option>
+                    <option value="3">Wednesday</option>
+                    <option value="4">Thursday</option>
+                    <option value="5">Friday</option>
+                    <option value="6">Saturday</option>
+                </select>
+                <button class="button" id="addButton">Add Task</button>
+            </div>
+            <ul id="todoList" class="todo-list"></ul>
+        </div>
     </div>
 
     <script>
@@ -118,11 +172,11 @@
                 if (profile) {
                     const { name } = JSON.parse(profile);
                     welcomeMessage.textContent = `Welcome, ${name}!`;
-                    profileSection.style.display = 'none';
-                    todoSection.style.display = 'block';
+                    profileSection.classList.add('hidden');
+                    todoSection.classList.remove('hidden');
                 } else {
-                    profileSection.style.display = 'block';
-                    todoSection.style.display = 'none';
+                    profileSection.classList.remove('hidden');
+                    todoSection.classList.add('hidden');
                 }
             }
 
@@ -138,11 +192,11 @@
             // Cookie Banner
             const cookieBanner = document.getElementById('cookieBanner');
             function dismissBanner() {
-                cookieBanner.style.display = 'none';
+                cookieBanner.classList.add('hidden');
                 localStorage.setItem('cookiesAccepted', 'true');
             }
             if (!localStorage.getItem('cookiesAccepted')) {
-                cookieBanner.style.display = 'block';
+                cookieBanner.classList.remove('hidden');
             }
 
             // Todo List
