@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Todo List with Profiles</title>
     <style>
+        /* Styles for light and dark mode */
         :root {
             --bg-main: #f5f5f5;
             --bg-card: #ffffff;
@@ -35,6 +36,7 @@
             }
         }
 
+        /* Basic styling */
         body {
             font-family: system-ui, -apple-system, sans-serif;
             max-width: 600px;
@@ -44,7 +46,7 @@
             color: var(--text-primary);
             transition: background-color 0.3s ease, color 0.3s ease;
         }
-        
+
         .container {
             background: var(--bg-card);
             padding: 2rem;
@@ -63,12 +65,12 @@
             margin-bottom: 1rem;
         }
 
-        .input-group {
+        .profile-group {
             display: none;
             flex-direction: column;
         }
 
-        .active .input-group {
+        .show-profile .profile-group {
             display: flex;
         }
 
@@ -104,7 +106,7 @@
             padding: 0.5rem;
             background: var(--bg-card);
             border-radius: 6px;
-            display: flex;
+            display: none;
             align-items: center;
             gap: 1rem;
         }
@@ -136,7 +138,7 @@
         <h1>Todo List</h1>
         
         <!-- Profile Card -->
-        <div id="profileCard" class="profile-card" style="display: none;">
+        <div id="profileCard" class="profile-card">
             <p><strong>Welcome, </strong><span id="profileName"></span>!</p>
             <button id="deleteProfileButton" class="button" style="background-color: var(--btn-delete);">Delete Profile</button>
         </div>
@@ -148,7 +150,7 @@
         </div>
 
         <!-- Todo Input -->
-        <div class="input-group active" id="todoSection">
+        <div class="input-group" id="todoSection" style="display: none;">
             <input type="text" id="todoInput" placeholder="Add a new todo">
             <button id="addButton" class="button">Add</button>
         </div>
@@ -181,15 +183,17 @@
             const PROFILE_KEY = 'userProfile';
             const COOKIE_CONSENT_KEY = 'cookieConsent';
 
+            // Profile management
             function loadProfile() {
                 const profile = JSON.parse(localStorage.getItem(PROFILE_KEY));
                 if (profile) {
                     elements.profileSetup.style.display = 'none';
                     elements.profileCard.style.display = 'flex';
-                    elements.todoSection.classList.add('active');
+                    elements.todoSection.style.display = 'flex';
                     elements.profileName.textContent = profile.name;
                 } else {
-                    elements.todoSection.classList.remove('active');
+                    elements.profileSetup.style.display = 'flex';
+                    elements.todoSection.style.display = 'none';
                 }
             }
 
@@ -205,10 +209,11 @@
                 localStorage.removeItem(PROFILE_KEY);
                 elements.profileCard.style.display = 'none';
                 elements.profileSetup.style.display = 'flex';
-                elements.todoSection.classList.remove('active');
+                elements.todoSection.style.display = 'none';
                 elements.profileNameInput.value = '';
             }
 
+            // Cookie consent management
             function showCookieModal() {
                 if (!localStorage.getItem(COOKIE_CONSENT_KEY)) {
                     elements.cookieModal.style.display = 'flex';
