@@ -59,22 +59,13 @@
             margin-bottom: 1.5rem;
         }
 
-        .input-group, .profile-group {
+        .input-group {
             display: flex;
             gap: 0.5rem;
             margin-bottom: 1rem;
         }
 
-        .profile-group {
-            display: none;
-            flex-direction: column;
-        }
-
-        .show-profile .profile-group {
-            display: flex;
-        }
-
-        input[type="text"] {
+        .task-input {
             flex: 1;
             padding: 0.5rem;
             border: 1px solid var(--border-color);
@@ -99,138 +90,89 @@
             background-color: var(--btn-primary-hover);
         }
 
-        .profile-card {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            padding: 0.5rem;
-            background: var(--bg-card);
-            border-radius: 6px;
-            display: none;
-            align-items: center;
-            gap: 1rem;
+        .todo-list {
+            list-style: none;
+            padding: 0;
+            margin-top: 1rem;
         }
 
-        .cookie-modal {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: var(--bg-item);
-            padding: 1rem;
+        .todo-item {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            border-top: 2px solid var(--border-color);
-        }
-
-        .cookie-modal button {
-            background-color: var(--btn-primary);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
+            padding: 0.75rem;
+            background: var(--bg-item);
+            margin-bottom: 0.5rem;
             border-radius: 4px;
-            cursor: pointer;
+            gap: 0.5rem;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Todo List</h1>
-        
-        <!-- Profile Card -->
-        <div id="profileCard" class="profile-card">
-            <p><strong>Welcome, </strong><span id="profileName"></span>!</p>
-            <button id="deleteProfileButton" class="button" style="background-color: var(--btn-delete);">Delete Profile</button>
+        <div class="input-group">
+            <input type="text" id="todoInput" class="task-input" placeholder="Add a new task">
+            <button class="button" id="addButton">Add</button>
         </div>
-
-        <!-- Profile Setup -->
-        <div class="profile-group" id="profileSetup">
-            <input type="text" id="profileNameInput" placeholder="Enter your name">
-            <button id="saveProfileButton" class="button">Save Profile</button>
-        </div>
-
-        <!-- Todo Input -->
-        <div class="input-group" id="todoSection" style="display: none;">
-            <input type="text" id="todoInput" placeholder="Add a new todo">
-            <button id="addButton" class="button">Add</button>
-        </div>
-        
-        <ul id="todoList"></ul>
-    </div>
-
-    <div id="cookieModal" class="cookie-modal" style="display: none;">
-        <p>We use cookies to enhance your experience. By using this site, you consent to our use of cookies.</p>
-        <button id="dismissCookieButton">Accept</button>
+        <ul id="todoList" class="todo-list"></ul>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const elements = {
-                profileNameInput: document.getElementById('profileNameInput'),
-                saveProfileButton: document.getElementById('saveProfileButton'),
-                deleteProfileButton: document.getElementById('deleteProfileButton'),
-                profileCard: document.getElementById('profileCard'),
-                profileName: document.getElementById('profileName'),
-                profileSetup: document.getElementById('profileSetup'),
-                cookieModal: document.getElementById('cookieModal'),
-                dismissCookieButton: document.getElementById('dismissCookieButton'),
-                todoSection: document.getElementById('todoSection'),
-                todoInput: document.getElementById('todoInput'),
-                addButton: document.getElementById('addButton'),
-                todoList: document.getElementById('todoList')
-            };
+            const todoInput = document.getElementById('todoInput');
+            const addButton = document.getElementById('addButton');
+            const todoList = document.getElementById('todoList');
 
-            const PROFILE_KEY = 'userProfile';
-            const COOKIE_CONSENT_KEY = 'cookieConsent';
+            // Load saved tasks from local storage
+            let todos = JSON.parse(localStorage.getItem('todos') || '[]');
 
-            // Profile management
-            function loadProfile() {
-                const profile = JSON.parse(localStorage.getItem(PROFILE_KEY));
-                if (profile) {
-                    elements.profileSetup.style.display = 'none';
-                    elements.profileCard.style.display = 'flex';
-                    elements.todoSection.style.display = 'flex';
-                    elements.profileName.textContent = profile.name;
-                } else {
-                    elements.profileSetup.style.display = 'flex';
-                    elements.todoSection.style.display = 'none';
+            function renderTodos() {
+                todoList.innerHTML = ''; // Clear existing tasks
+
+                todos.forEach(todo => {
+                    const li = document.createElement('li');
+                    li.className = 'todo-item';
+                    li.innerHTML = `
+                        <span>${todo.text}</span>
+                        <button class="button delete-button" data-id="${todo.id}">Delete</button>
+                    `;
+                    todoList.appendChild(li);
+
+                    li.querySelector('.delete-button').addEventListener('click', function() {
+                        deleteTodo(todo.id);
+                    });
+                });
+            }
+
+            function addTodo() {
+                const text = todoInput.value.trim();
+                if (text) {
+                    const newTodo = {
+                        text,
+                        id: Date.now()
+                    };
+                    todos.push(newTodo);
+                    localStorage.setItem('todos', JSON.stringify(todos));
+                    todoInput.value = '';
+                    renderTodos();
                 }
             }
 
-            function saveProfile() {
-                const name = elements.profileNameInput.value.trim();
-                if (name) {
-                    localStorage.setItem(PROFILE_KEY, JSON.stringify({ name }));
-                    loadProfile();
+            function deleteTodo(id) {
+                todos = todos.filter(todo => todo.id !== id);
+                localStorage.setItem('todos', JSON.stringify(todos));
+                renderTodos();
+            }
+
+            addButton.addEventListener('click', addTodo);
+
+            todoInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addTodo();
                 }
-            }
+            });
 
-            function deleteProfile() {
-                localStorage.removeItem(PROFILE_KEY);
-                elements.profileCard.style.display = 'none';
-                elements.profileSetup.style.display = 'flex';
-                elements.todoSection.style.display = 'none';
-                elements.profileNameInput.value = '';
-            }
-
-            // Cookie consent management
-            function showCookieModal() {
-                if (!localStorage.getItem(COOKIE_CONSENT_KEY)) {
-                    elements.cookieModal.style.display = 'flex';
-                }
-            }
-
-            function acceptCookies() {
-                localStorage.setItem(COOKIE_CONSENT_KEY, 'true');
-                elements.cookieModal.style.display = 'none';
-            }
-
-            elements.saveProfileButton.addEventListener('click', saveProfile);
-            elements.deleteProfileButton.addEventListener('click', deleteProfile);
-            elements.dismissCookieButton.addEventListener('click', acceptCookies);
-
-            loadProfile();
-            showCookieModal();
+            renderTodos(); // Initial render of saved todos
         });
     </script>
 </body>
