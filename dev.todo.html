@@ -35,14 +35,16 @@
             border-radius: 10px;
             box-shadow: 0 2px 4px var(--shadow-color);
             margin-bottom: 1rem;
+            overflow: hidden;
         }
         h1 { color: var(--text-primary); }
         .input-group, .todo-item {
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            flex-wrap: wrap;
         }
-        .todo-list { list-style: none; padding: 0; }
+        .todo-list { list-style: none; padding: 0; margin: 0; }
         .button {
             background: var(--btn-primary);
             color: white;
@@ -55,6 +57,8 @@
             display: none;
             position: fixed;
             bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
             background: #f56565;
             padding: 1rem;
             border-radius: 8px;
@@ -116,6 +120,9 @@
                     welcomeMessage.textContent = `Welcome, ${name}!`;
                     profileSection.style.display = 'none';
                     todoSection.style.display = 'block';
+                } else {
+                    profileSection.style.display = 'block';
+                    todoSection.style.display = 'none';
                 }
             }
 
