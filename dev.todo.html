@@ -6,40 +6,97 @@
     <title>Todo Manager</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
     <style>
-        /* Light mode (default) styles are already in place */
-        
-        /* Dark mode styles */
+        :root {
+            /* Light theme defaults */
+            --bg-primary: #f9fafb;
+            --bg-secondary: #ffffff;
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --border-color: #e5e7eb;
+            --input-bg: #ffffff;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --overlay-bg: rgba(0, 0, 0, 0.5);
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+            --error-bg: #ef4444;
+            --delete-color: #ef4444;
+            --delete-hover: #dc2626;
+        }
+
         @media (prefers-color-scheme: dark) {
-            body {
-                background-color: #1a1a1a;
-                color: #e5e5e5;
+            :root {
+                --bg-primary: #111827;
+                --bg-secondary: #1f2937;
+                --text-primary: #f9fafb;
+                --text-secondary: #d1d5db;
+                --border-color: #374151;
+                --input-bg: #374151;
+                --shadow-color: rgba(0, 0, 0, 0.25);
+                --overlay-bg: rgba(0, 0, 0, 0.75);
+                --accent-color: #3b82f6;
+                --accent-hover: #60a5fa;
+                --error-bg: #dc2626;
+                --delete-color: #ef4444;
+                --delete-hover: #f87171;
             }
-            
-            .dark-mode-bg {
-                background-color: #2d2d2d;
-            }
-            
-            .dark-mode-text {
-                color: #e5e5e5;
-            }
-            
-            .dark-mode-border {
-                border-color: #404040;
-            }
-            
-            input, select {
-                background-color: #2d2d2d;
-                color: #e5e5e5;
-                border-color: #404040;
-            }
-            
-            input::placeholder {
-                color: #9ca3af;
-            }
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .theme-card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px var(--shadow-color);
+        }
+
+        .theme-input {
+            background-color: var(--input-bg);
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+
+        .theme-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .theme-button {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .theme-button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .theme-text-secondary {
+            color: var(--text-secondary);
+        }
+
+        .theme-border {
+            border-color: var(--border-color);
+        }
+
+        .theme-checkbox {
+            background-color: var(--input-bg);
+            border-color: var(--border-color);
+        }
+
+        .delete-button {
+            color: var(--delete-color);
+        }
+
+        .delete-button:hover {
+            color: var(--delete-hover);
+        }
+
+        .modal-overlay {
+            background-color: var(--overlay-bg);
         }
     </style>
     <script>
-        // Simple UUID generator function
         function generateUUID() {
             return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
                 var r = Math.random() * 16 | 0,
@@ -49,7 +106,7 @@
         }
     </script>
 </head>
-<body class="bg-gray-50 transition-colors duration-200">
+<body class="transition-colors duration-200">
     <!-- Cookie Banner -->
     <div id="cookieBanner" class="fixed bottom-0 left-0 right-0 bg-gray-900 text-white p-4 flex justify-between items-center z-50">
         <p>This app uses cookies to enhance your experience.</p>
@@ -57,11 +114,12 @@
     </div>
 
     <!-- Profile Modal -->
-    <div id="profileModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="dark-mode-bg bg-white p-6 rounded-lg shadow-xl">
-            <h2 class="text-xl font-bold mb-4 dark-mode-text">Setup Profile</h2>
-            <input type="text" id="profileName" placeholder="Your Name" class="w-full p-2 border rounded mb-4 dark-mode-border">
-            <button onclick="saveProfile()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Save</button>
+    <div id="profileModal" class="hidden fixed inset-0 modal-overlay flex items-center justify-center z-50">
+        <div class="theme-card p-6 rounded-lg">
+            <h2 class="text-xl font-bold mb-4">Setup Profile</h2>
+            <input type="text" id="profileName" placeholder="Your Name" 
+                   class="w-full p-2 rounded mb-4 theme-input">
+            <button onclick="saveProfile()" class="theme-button px-4 py-2 rounded">Save</button>
         </div>
     </div>
 
@@ -73,18 +131,18 @@
     <div class="container mx-auto px-4 py-8 max-w-2xl">
         <!-- Header -->
         <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-800 dark-mode-text">Todo Manager</h1>
-            <div id="profileDisplay" class="text-gray-600 dark-mode-text"></div>
+            <h1 class="text-3xl font-bold">Todo Manager</h1>
+            <div id="profileDisplay" class="theme-text-secondary"></div>
         </div>
 
         <!-- Add Task Form -->
-        <div class="dark-mode-bg bg-white p-6 rounded-lg shadow-lg mb-6">
+        <div class="theme-card p-6 rounded-lg mb-6">
             <input type="text" id="taskInput" placeholder="New task..." 
-                   class="w-full p-3 border rounded mb-4 dark-mode-border">
+                   class="w-full p-3 rounded mb-4 theme-input">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <input type="datetime-local" id="dueDate" 
-                       class="p-3 border rounded dark-mode-border">
-                <select id="recurringType" class="p-3 border rounded dark-mode-border">
+                       class="p-3 rounded theme-input">
+                <select id="recurringType" class="p-3 rounded theme-input">
                     <option value="">No recurring</option>
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
@@ -92,7 +150,7 @@
                 </select>
             </div>
             <button onclick="addTask()" 
-                    class="w-full bg-blue-500 text-white p-3 rounded hover:bg-blue-600 transition">
+                    class="w-full theme-button p-3 rounded transition">
                 Add Task
             </button>
         </div>
@@ -102,7 +160,6 @@
     </div>
 
     <script>
-        // Error handling function
         function showError(message = 'An error occurred. Please try again.') {
             const toast = document.getElementById('errorToast');
             toast.textContent = message;
@@ -112,10 +169,9 @@
             }, 3000);
         }
 
-        // Function to apply dark mode classes to task elements
         function createTaskElement(task) {
             const taskElement = document.createElement('div');
-            taskElement.className = `dark-mode-bg bg-white p-4 rounded-lg shadow flex items-center justify-between
+            taskElement.className = `theme-card p-4 rounded-lg flex items-center justify-between
                                   ${task.completed ? 'opacity-50' : ''}`;
             
             const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleString() : 'No due date';
@@ -125,14 +181,14 @@
                 <div class="flex items-center space-x-4">
                     <input type="checkbox" ${task.completed ? 'checked' : ''}
                            onclick="toggleTask('${task.id}')"
-                           class="h-5 w-5 rounded border-gray-300 dark-mode-border">
+                           class="h-5 w-5 rounded theme-checkbox">
                     <div>
-                        <p class="dark-mode-text text-gray-800 ${task.completed ? 'line-through' : ''}">${task.text}</p>
-                        <p class="text-sm text-gray-500 dark-mode-text">Due: ${dueDate} ${recurring}</p>
+                        <p class="${task.completed ? 'line-through' : ''}">${task.text}</p>
+                        <p class="text-sm theme-text-secondary">Due: ${dueDate} ${recurring}</p>
                     </div>
                 </div>
                 <button onclick="deleteTask('${task.id}')"
-                        class="text-red-500 hover:text-red-700">
+                        class="delete-button transition">
                     <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                               d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -143,7 +199,6 @@
             return taskElement;
         }
 
-        // Check for profile
         window.onload = function() {
             try {
                 const profile = localStorage.getItem('profile');
@@ -154,7 +209,6 @@
                         `Welcome, ${JSON.parse(profile).name}`;
                 }
 
-                // Check cookie banner
                 if (!localStorage.getItem('cookieBannerDismissed')) {
                     document.getElementById('cookieBanner').style.display = 'flex';
                 } else {
