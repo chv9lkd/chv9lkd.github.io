@@ -1,21 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Coffee, Pizza, ChevronDown, Plus, Minus } from 'lucide-react';
 
-// Mock data - In production, this would come from an API
-const MENU_ITEMS = [
-  { id: 1, name: 'Caffe Latte', price: 4.95, category: 'drinks', image: '/api/placeholder/100/100' },
-  { id: 2, name: 'Cappuccino', price: 4.75, category: 'drinks', image: '/api/placeholder/100/100' },
-  { id: 3, name: 'Chocolate Croissant', price: 3.95, category: 'food', image: '/api/placeholder/100/100' },
-];
-
 const MobileOrderingApp = () => {
+  const [menuItems, setMenuItems] = useState([]);
   const [cart, setCart] = useState([]);
   const [activeCategory, setActiveCategory] = useState('drinks');
   const [orderStatus, setOrderStatus] = useState(null);
+
+  useEffect(() => {
+    // Fetch menu items from backend API
+    const fetchMenuItems = async () => {
+      try {
+        const response = await axios.get('/api/menu');
+        setMenuItems(response.data);
+      } catch (error) {
+        console.error('Error fetching menu items:', error);
+      }
+    };
+    fetchMenuItems();
+  }, []);
 
   const addToCart = (item) => {
     const existingItem = cart.find((cartItem) => cartItem.id === item.id);
@@ -49,12 +57,16 @@ const MobileOrderingApp = () => {
   };
 
   const handleCheckout = async () => {
-    // Mock checkout process
+    // Process checkout with payment gateway
     setOrderStatus('processing');
-    setTimeout(() => {
+    try {
+      await axios.post('/api/orders', { items: cart });
       setOrderStatus('confirmed');
       setCart([]);
-    }, 2000);
+    } catch (error) {
+      console.error('Error processing order:', error);
+      setOrderStatus('error');
+    }
   };
 
   return (
@@ -90,7 +102,7 @@ const MobileOrderingApp = () => {
 
       {/* Menu Items */}
       <div className="flex-grow overflow-auto mb-4">
-        {MENU_ITEMS.filter(item => item.category === activeCategory).map((item) => (
+        {menuItems.filter(item => item.category === activeCategory).map((item) => (
           <Card key={item.id} className="mb-4">
             <CardContent className="p-4 flex items-center">
               <img
@@ -144,21 +156,21 @@ const MobileOrderingApp = () => {
             </div>
             <Button
               onClick={handleCheckout}
-              disabled={orderStatus === 'processing'}
+              disabled={orderStatus === 'processing' || orderStatus === 'confirmed'}
             >
-              {orderStatus === 'processing' ? 'Processing...' : 'Checkout'}
+              {orderStatus === 'processing' ? 'Processing...' : orderStatus === 'confirmed' ? 'Order Confirmed' : 'Checkout'}
             </Button>
           </CardFooter>
         </Card>
       )}
 
-      {/* Order Confirmation */}
-      {orderStatus === 'confirmed' && (
+      {/* Error Handling */}
+      {orderStatus === 'error' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
           <Card className="w-80">
             <CardContent className="p-6 text-center">
-              <h2 className="text-xl font-bold mb-4">Order Confirmed!</h2>
-              <p>Your order will be ready in 10-15 minutes.</p>
+              <h2 className="text-xl font-bold mb-4">Oops, something went wrong!</h2>
+              <p>Please try placing your order again.</p>
               <Button
                 className="mt-4"
                 onClick={() => setOrderStatus(null)}
