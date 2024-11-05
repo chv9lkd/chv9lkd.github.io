@@ -1,26 +1,176 @@
-Features:
-1. **Menu Display**: The app will show the Starbucks menu, including drinks, food items, and customization options. This data can be fetched from a backend API or stored locally.
-2. **Order Placement**: Users can select items, customize their order, and place a mobile order. The order details will be sent to the backend for processing.
-3. **Payment Integration**: The app will integrate with a secure e-commerce payment gateway (e.g., Stripe, PayPal) to allow customers to pay for their orders.
-4. **Order Status Tracking**: Users can view the status of their orders (e.g., "Preparing", "Ready for Pickup") and receive notifications when their order is ready.
-5. **User Accounts**: Customers can create accounts to save their order history, favorite items, and payment information for faster checkout.
-6. **Push Notifications**: The app can send push notifications to alert users when their order is ready for pickup.
+import React, { useState } from 'react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { ShoppingCart, Coffee, Pizza, ChevronDown, Plus, Minus } from 'lucide-react';
 
-Tech Stack:
-- **Front-end**: React.js, Tailwind CSS
-- **Back-end**: Node.js, Express.js
-- **Database**: MongoDB or Firebase Firestore
-- **Payment Integration**: Stripe or PayPal
-- **Notifications**: Firebase Cloud Messaging or a third-party push notification service
+// Mock data - In production, this would come from an API
+const MENU_ITEMS = [
+  { id: 1, name: 'Caffe Latte', price: 4.95, category: 'drinks', image: '/api/placeholder/100/100' },
+  { id: 2, name: 'Cappuccino', price: 4.75, category: 'drinks', image: '/api/placeholder/100/100' },
+  { id: 3, name: 'Chocolate Croissant', price: 3.95, category: 'food', image: '/api/placeholder/100/100' },
+];
 
-Key Components:
-1. **Menu Component**: Displays the Starbucks menu, including item details, pricing, and customization options.
-2. **Order Form Component**: Allows users to select items, customize their order, and submit the order.
-3. **Payment Component**: Integrates with the payment gateway to securely process customer payments.
-4. **Order Status Component**: Displays the current status of the user's order and provides notification options.
-5. **User Account Component**: Handles user registration, login, and account management features.
+const MobileOrderingApp = () => {
+  const [cart, setCart] = useState([]);
+  const [activeCategory, setActiveCategory] = useState('drinks');
+  const [orderStatus, setOrderStatus] = useState(null);
 
-Deployment:
-The app can be deployed as a progressive web app (PWA) to provide a native-like experience on mobile devices. It can also be packaged as a mobile app for distribution on the App Store and Google Play Store.
+  const addToCart = (item) => {
+    const existingItem = cart.find((cartItem) => cartItem.id === item.id);
+    if (existingItem) {
+      setCart(cart.map((cartItem) =>
+        cartItem.id === item.id
+          ? { ...cartItem, quantity: cartItem.quantity + 1 }
+          : cartItem
+      ));
+    } else {
+      setCart([...cart, { ...item, quantity: 1 }]);
+    }
+  };
 
-I'd be happy to discuss the project in more detail and provide a more comprehensive implementation plan. Please let me know if you have any specific questions or requirements.
+  const removeFromCart = (itemId) => {
+    setCart(cart.filter((item) => item.id !== itemId));
+  };
+
+  const updateQuantity = (itemId, delta) => {
+    setCart(cart.map((item) => {
+      if (item.id === itemId) {
+        const newQuantity = Math.max(0, item.quantity + delta);
+        return newQuantity === 0 ? null : { ...item, quantity: newQuantity };
+      }
+      return item;
+    }).filter(Boolean));
+  };
+
+  const calculateTotal = () => {
+    return cart.reduce((total, item) => total + item.price * item.quantity, 0);
+  };
+
+  const handleCheckout = async () => {
+    // Mock checkout process
+    setOrderStatus('processing');
+    setTimeout(() => {
+      setOrderStatus('confirmed');
+      setCart([]);
+    }, 2000);
+  };
+
+  return (
+    <div className="max-w-md mx-auto p-4 flex flex-col h-screen bg-gray-50">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Campus Café</h1>
+        <div className="relative">
+          <ShoppingCart className="h-6 w-6" />
+          {cart.length > 0 && (
+            <Badge className="absolute -top-2 -right-2">{cart.length}</Badge>
+          )}
+        </div>
+      </div>
+
+      {/* Category Selector */}
+      <div className="flex space-x-4 mb-6">
+        <Button
+          variant={activeCategory === 'drinks' ? 'default' : 'outline'}
+          onClick={() => setActiveCategory('drinks')}
+        >
+          <Coffee className="mr-2 h-4 w-4" />
+          Drinks
+        </Button>
+        <Button
+          variant={activeCategory === 'food' ? 'default' : 'outline'}
+          onClick={() => setActiveCategory('food')}
+        >
+          <Pizza className="mr-2 h-4 w-4" />
+          Food
+        </Button>
+      </div>
+
+      {/* Menu Items */}
+      <div className="flex-grow overflow-auto mb-4">
+        {MENU_ITEMS.filter(item => item.category === activeCategory).map((item) => (
+          <Card key={item.id} className="mb-4">
+            <CardContent className="p-4 flex items-center">
+              <img
+                src={item.image}
+                alt={item.name}
+                className="w-16 h-16 rounded-lg object-cover mr-4"
+              />
+              <div className="flex-grow">
+                <h3 className="font-semibold">{item.name}</h3>
+                <p className="text-gray-600">${item.price.toFixed(2)}</p>
+              </div>
+              <Button onClick={() => addToCart(item)}>Add</Button>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Cart Summary */}
+      {cart.length > 0 && (
+        <Card className="mt-auto">
+          <CardHeader>
+            <CardTitle>Your Order</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {cart.map((item) => (
+              <div key={item.id} className="flex items-center justify-between mb-2">
+                <span>{item.name}</span>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => updateQuantity(item.id, -1)}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span>{item.quantity}</span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => updateQuantity(item.id, 1)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <div className="text-lg font-semibold">
+              Total: ${calculateTotal().toFixed(2)}
+            </div>
+            <Button
+              onClick={handleCheckout}
+              disabled={orderStatus === 'processing'}
+            >
+              {orderStatus === 'processing' ? 'Processing...' : 'Checkout'}
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
+
+      {/* Order Confirmation */}
+      {orderStatus === 'confirmed' && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+          <Card className="w-80">
+            <CardContent className="p-6 text-center">
+              <h2 className="text-xl font-bold mb-4">Order Confirmed!</h2>
+              <p>Your order will be ready in 10-15 minutes.</p>
+              <Button
+                className="mt-4"
+                onClick={() => setOrderStatus(null)}
+              >
+                Close
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default MobileOrderingApp;
