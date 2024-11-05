@@ -5,78 +5,96 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Todo Manager</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        /* Light mode (default) styles are already in place */
+        
+        /* Dark mode styles */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: #1a1a1a;
+                color: #e5e5e5;
+            }
+            
+            .dark-mode-bg {
+                background-color: #2d2d2d;
+            }
+            
+            .dark-mode-text {
+                color: #e5e5e5;
+            }
+            
+            .dark-mode-border {
+                border-color: #404040;
+            }
+            
+            input, select {
+                background-color: #2d2d2d;
+                color: #e5e5e5;
+                border-color: #404040;
+            }
+            
+            input::placeholder {
+                color: #9ca3af;
+            }
+        }
+    </style>
+    <script>
+        // Simple UUID generator function
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0,
+                    v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+    </script>
 </head>
-<body class="bg-gray-50">
-    <!-- Toast Notifications -->
-    <div id="toastContainer" class="fixed top-4 right-4 z-50 space-y-2"></div>
-
+<body class="bg-gray-50 transition-colors duration-200">
     <!-- Cookie Banner -->
-    <div id="cookieBanner" class="hidden fixed bottom-0 left-0 right-0 bg-gray-900 text-white p-4 flex justify-between items-center z-40">
+    <div id="cookieBanner" class="fixed bottom-0 left-0 right-0 bg-gray-900 text-white p-4 flex justify-between items-center z-50">
         <p>This app uses cookies to enhance your experience.</p>
-        <button 
-            class="bg-white text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100" 
-            onclick="App.dismissCookieBanner()">
-            Got it!
-        </button>
+        <button onclick="dismissCookieBanner()" class="bg-white text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100">Got it!</button>
     </div>
 
     <!-- Profile Modal -->
     <div id="profileModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div class="bg-white p-6 rounded-lg shadow-xl w-96">
-            <h2 class="text-xl font-bold mb-4">Setup Profile</h2>
-            <input 
-                type="text" 
-                id="profileName" 
-                placeholder="Your Name" 
-                class="w-full p-2 border rounded mb-4"
-                onkeypress="if(event.key === 'Enter') App.saveProfile()">
-            <button 
-                onclick="App.saveProfile()" 
-                class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
-                Save
-            </button>
+        <div class="dark-mode-bg bg-white p-6 rounded-lg shadow-xl">
+            <h2 class="text-xl font-bold mb-4 dark-mode-text">Setup Profile</h2>
+            <input type="text" id="profileName" placeholder="Your Name" class="w-full p-2 border rounded mb-4 dark-mode-border">
+            <button onclick="saveProfile()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Save</button>
         </div>
+    </div>
+
+    <!-- Error Toast -->
+    <div id="errorToast" class="hidden fixed top-4 right-4 bg-red-500 text-white p-4 rounded-lg shadow-lg z-50">
+        An error occurred. Please try again.
     </div>
 
     <div class="container mx-auto px-4 py-8 max-w-2xl">
         <!-- Header -->
         <div class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-800">Todo Manager</h1>
-            <div id="profileDisplay" class="text-gray-600"></div>
+            <h1 class="text-3xl font-bold text-gray-800 dark-mode-text">Todo Manager</h1>
+            <div id="profileDisplay" class="text-gray-600 dark-mode-text"></div>
         </div>
 
         <!-- Add Task Form -->
-        <div class="bg-white p-6 rounded-lg shadow-lg mb-6">
-            <form id="taskForm" onsubmit="App.handleTaskSubmit(event)" class="space-y-4">
-                <input 
-                    type="text" 
-                    id="taskInput" 
-                    placeholder="New task..." 
-                    required
-                    class="w-full p-3 border rounded">
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input 
-                        type="datetime-local" 
-                        id="dueDate" 
-                        class="p-3 border rounded">
-                    
-                    <select 
-                        id="recurringType" 
-                        class="p-3 border rounded">
-                        <option value="">No recurring</option>
-                        <option value="daily">Daily</option>
-                        <option value="weekly">Weekly</option>
-                        <option value="monthly">Monthly</option>
-                    </select>
-                </div>
-                
-                <button 
-                    type="submit"
+        <div class="dark-mode-bg bg-white p-6 rounded-lg shadow-lg mb-6">
+            <input type="text" id="taskInput" placeholder="New task..." 
+                   class="w-full p-3 border rounded mb-4 dark-mode-border">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <input type="datetime-local" id="dueDate" 
+                       class="p-3 border rounded dark-mode-border">
+                <select id="recurringType" class="p-3 border rounded dark-mode-border">
+                    <option value="">No recurring</option>
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                </select>
+            </div>
+            <button onclick="addTask()" 
                     class="w-full bg-blue-500 text-white p-3 rounded hover:bg-blue-600 transition">
-                    Add Task
-                </button>
-            </form>
+                Add Task
+            </button>
         </div>
 
         <!-- Tasks List -->
@@ -84,205 +102,172 @@
     </div>
 
     <script>
-        // Main App namespace to avoid global scope pollution
-        const App = {
-            // State management
-            state: {
-                tasks: [],
-                profile: null,
-                initialized: false
-            },
+        // Error handling function
+        function showError(message = 'An error occurred. Please try again.') {
+            const toast = document.getElementById('errorToast');
+            toast.textContent = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
 
-            // Utility functions
-            utils: {
-                generateId: () => Date.now().toString(36) + Math.random().toString(36).substr(2),
-                
-                showToast: (message, type = 'error') => {
-                    const container = document.getElementById('toastContainer');
-                    const toast = document.createElement('div');
-                    toast.className = `p-4 rounded-lg shadow-lg ${
-                        type === 'error' ? 'bg-red-500' : 'bg-green-500'
-                    } text-white`;
-                    toast.textContent = message;
-                    container.appendChild(toast);
-                    setTimeout(() => toast.remove(), 3000);
-                },
+        // Function to apply dark mode classes to task elements
+        function createTaskElement(task) {
+            const taskElement = document.createElement('div');
+            taskElement.className = `dark-mode-bg bg-white p-4 rounded-lg shadow flex items-center justify-between
+                                  ${task.completed ? 'opacity-50' : ''}`;
+            
+            const dueDate = task.dueDate ? new Date(task.dueDate).toLocaleString() : 'No due date';
+            const recurring = task.recurring ? `(${task.recurring})` : '';
 
-                formatDate: (dateString) => {
-                    if (!dateString) return 'No due date';
-                    try {
-                        return new Date(dateString).toLocaleString();
-                    } catch (e) {
-                        return 'Invalid date';
-                    }
-                }
-            },
+            taskElement.innerHTML = `
+                <div class="flex items-center space-x-4">
+                    <input type="checkbox" ${task.completed ? 'checked' : ''}
+                           onclick="toggleTask('${task.id}')"
+                           class="h-5 w-5 rounded border-gray-300 dark-mode-border">
+                    <div>
+                        <p class="dark-mode-text text-gray-800 ${task.completed ? 'line-through' : ''}">${task.text}</p>
+                        <p class="text-sm text-gray-500 dark-mode-text">Due: ${dueDate} ${recurring}</p>
+                    </div>
+                </div>
+                <button onclick="deleteTask('${task.id}')"
+                        class="text-red-500 hover:text-red-700">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+            `;
+            
+            return taskElement;
+        }
 
-            // Storage operations
-            storage: {
-                get: (key) => {
-                    try {
-                        const item = localStorage.getItem(key);
-                        return item ? JSON.parse(item) : null;
-                    } catch (e) {
-                        console.error(`Error getting ${key} from storage:`, e);
-                        return null;
-                    }
-                },
-
-                set: (key, value) => {
-                    try {
-                        localStorage.setItem(key, JSON.stringify(value));
-                        return true;
-                    } catch (e) {
-                        console.error(`Error setting ${key} in storage:`, e);
-                        return false;
-                    }
-                }
-            },
-
-            // Initialize the application
-            init: function() {
-                if (this.state.initialized) return;
-                
-                // Load profile
-                this.state.profile = this.storage.get('profile');
-                if (this.state.profile) {
-                    document.getElementById('profileDisplay').textContent = 
-                        `Welcome, ${this.state.profile.name}`;
-                } else {
+        // Check for profile
+        window.onload = function() {
+            try {
+                const profile = localStorage.getItem('profile');
+                if (!profile) {
                     document.getElementById('profileModal').classList.remove('hidden');
+                } else {
+                    document.getElementById('profileDisplay').textContent = 
+                        `Welcome, ${JSON.parse(profile).name}`;
                 }
-
-                // Load tasks
-                this.state.tasks = this.storage.get('tasks') || [];
-                this.renderTasks();
 
                 // Check cookie banner
-                if (!this.storage.get('cookieBannerDismissed')) {
-                    document.getElementById('cookieBanner').classList.remove('hidden');
+                if (!localStorage.getItem('cookieBannerDismissed')) {
+                    document.getElementById('cookieBanner').style.display = 'flex';
+                } else {
+                    document.getElementById('cookieBanner').style.display = 'none';
                 }
 
-                this.state.initialized = true;
-            },
+                loadTasks();
+            } catch (error) {
+                showError('Error loading profile');
+                console.error('Profile loading error:', error);
+            }
+        };
 
-            // Profile management
-            saveProfile: function() {
-                const nameInput = document.getElementById('profileName');
-                const name = nameInput.value.trim();
-                
-                if (!name) {
-                    this.utils.showToast('Please enter your name');
-                    return;
-                }
+        function dismissCookieBanner() {
+            try {
+                const banner = document.getElementById('cookieBanner');
+                localStorage.setItem('cookieBannerDismissed', 'true');
+                banner.style.display = 'none';
+            } catch (error) {
+                showError('Error dismissing banner');
+                console.error('Cookie banner error:', error);
+            }
+        }
 
-                this.state.profile = { name };
-                if (this.storage.set('profile', this.state.profile)) {
+        function saveProfile() {
+            try {
+                const name = document.getElementById('profileName').value;
+                if (name) {
+                    localStorage.setItem('profile', JSON.stringify({ name }));
                     document.getElementById('profileModal').classList.add('hidden');
                     document.getElementById('profileDisplay').textContent = `Welcome, ${name}`;
-                    this.utils.showToast('Profile saved successfully!', 'success');
                 }
-            },
+            } catch (error) {
+                showError('Error saving profile');
+                console.error('Profile saving error:', error);
+            }
+        }
 
-            // Cookie banner management
-            dismissCookieBanner: function() {
-                this.storage.set('cookieBannerDismissed', true);
-                document.getElementById('cookieBanner').classList.add('hidden');
-            },
-
-            // Task management
-            handleTaskSubmit: function(event) {
-                event.preventDefault();
-                
+        function addTask() {
+            try {
                 const taskInput = document.getElementById('taskInput');
                 const dueDate = document.getElementById('dueDate');
                 const recurringType = document.getElementById('recurringType');
 
+                if (!taskInput.value) return;
+
                 const task = {
-                    id: this.utils.generateId(),
-                    text: taskInput.value.trim(),
+                    id: generateUUID(),
+                    text: taskInput.value,
                     completed: false,
                     dueDate: dueDate.value,
                     recurring: recurringType.value,
                     createdAt: new Date().toISOString()
                 };
 
-                this.state.tasks.push(task);
-                if (this.storage.set('tasks', this.state.tasks)) {
-                    this.renderTasks();
-                    event.target.reset();
-                    this.utils.showToast('Task added successfully!', 'success');
-                }
-            },
+                const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+                tasks.push(task);
+                localStorage.setItem('tasks', JSON.stringify(tasks));
 
-            toggleTask: function(taskId) {
-                const taskIndex = this.state.tasks.findIndex(t => t.id === taskId);
+                taskInput.value = '';
+                dueDate.value = '';
+                recurringType.value = '';
+
+                loadTasks();
+            } catch (error) {
+                showError('Error adding task');
+                console.error('Task addition error:', error);
+            }
+        }
+
+        function deleteTask(taskId) {
+            try {
+                const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+                const updatedTasks = tasks.filter(task => task.id !== taskId);
+                localStorage.setItem('tasks', JSON.stringify(updatedTasks));
+                loadTasks();
+            } catch (error) {
+                showError('Error deleting task');
+                console.error('Task deletion error:', error);
+            }
+        }
+
+        function toggleTask(taskId) {
+            try {
+                const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+                const taskIndex = tasks.findIndex(task => task.id === taskId);
                 if (taskIndex !== -1) {
-                    this.state.tasks[taskIndex].completed = !this.state.tasks[taskIndex].completed;
-                    if (this.storage.set('tasks', this.state.tasks)) {
-                        this.renderTasks();
-                    }
+                    tasks[taskIndex].completed = !tasks[taskIndex].completed;
+                    localStorage.setItem('tasks', JSON.stringify(tasks));
+                    loadTasks();
                 }
-            },
+            } catch (error) {
+                showError('Error updating task');
+                console.error('Task toggle error:', error);
+            }
+        }
 
-            deleteTask: function(taskId) {
-                this.state.tasks = this.state.tasks.filter(t => t.id !== taskId);
-                if (this.storage.set('tasks', this.state.tasks)) {
-                    this.renderTasks();
-                    this.utils.showToast('Task deleted successfully!', 'success');
-                }
-            },
-
-            renderTasks: function() {
+        function loadTasks() {
+            try {
+                const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
                 const tasksList = document.getElementById('tasksList');
                 tasksList.innerHTML = '';
 
-                if (this.state.tasks.length === 0) {
-                    tasksList.innerHTML = `
-                        <div class="text-center text-gray-500 py-8">
-                            No tasks yet. Add your first task above!
-                        </div>
-                    `;
-                    return;
-                }
-
-                this.state.tasks
-                    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-                    .forEach(task => {
-                        const taskElement = document.createElement('div');
-                        taskElement.className = `bg-white p-4 rounded-lg shadow flex items-center justify-between
-                                             ${task.completed ? 'opacity-50' : ''}`;
-                        
-                        taskElement.innerHTML = `
-                            <div class="flex items-center space-x-4">
-                                <input type="checkbox" 
-                                       ${task.completed ? 'checked' : ''}
-                                       onclick="App.toggleTask('${task.id}')"
-                                       class="h-5 w-5 rounded border-gray-300">
-                                <div>
-                                    <p class="text-gray-800 ${task.completed ? 'line-through' : ''}">${task.text}</p>
-                                    <p class="text-sm text-gray-500">
-                                        Due: ${this.utils.formatDate(task.dueDate)}
-                                        ${task.recurring ? ` (${task.recurring})` : ''}
-                                    </p>
-                                </div>
-                            </div>
-                            <button onclick="App.deleteTask('${task.id}')"
-                                    class="text-red-500 hover:text-red-700">
-                                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                            </button>
-                        `;
-                        
-                        tasksList.appendChild(taskElement);
-                    });
+                tasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+                     .forEach(task => {
+                    const taskElement = createTaskElement(task);
+                    tasksList.appendChild(taskElement);
+                });
+            } catch (error) {
+                showError('Error loading tasks');
+                console.error('Task loading error:', error);
             }
-        };
-
-        // Initialize app when DOM is loaded
-        document.addEventListener('DOMContentLoaded', () => App.init());
+        }
     </script>
 </body>
 </html>
