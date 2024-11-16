@@ -4,11 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Inspiration Generator</title>
+    <title>Inspiration Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 </head>
 <body>
     <div id="root"></div>
@@ -16,109 +15,147 @@
 </body>
 </html>
 
-// src/main.jsx
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
-import './index.css';
+// src/services/quoteGenerator.js
+class QuoteGenerator {
+  constructor() {
+    this.beginnings = [
+      "In the depths of",
+      "Through the journey of",
+      "Beyond the realm of",
+      "Within the heart of",
+      "Amidst the silence of",
+      "Through the wisdom of",
+      "In the presence of",
+      "Within the essence of",
+      "Beyond the horizon of",
+      "Through the mirror of"
+    ];
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+    this.middles = [
+      "eternal wisdom",
+      "infinite possibility",
+      "timeless knowledge",
+      "deep understanding",
+      "boundless potential",
+      "sacred truth",
+      "divine purpose",
+      "inner strength",
+      "lasting peace",
+      "true harmony"
+    ];
 
-// src/App.jsx
-import React, { useState, useEffect } from 'react';
-import QuoteGenerator from './components/QuoteGenerator';
-import { createClient } from 'pexels';
-import axios from 'axios';
+    this.endings = [
+      "lies the path to enlightenment",
+      "we discover our true nature",
+      "emerges the light of truth",
+      "awakens the spirit within",
+      "reveals life's deeper meaning",
+      "transforms ordinary moments",
+      "unfolds life's greatest gifts",
+      "births newfound wisdom",
+      "opens doors to possibility",
+      "reveals our highest purpose"
+    ];
 
-const PEXELS_API_KEY = 'your_pexels_api_key';
-const OPENAI_API_KEY = 'your_openai_api_key';
+    this.philosophical = [
+      "Time is the artist of wisdom",
+      "Silence speaks when words cannot",
+      "Every ending is a new beginning",
+      "Change is the only constant truth",
+      "Nature whispers ancient wisdom",
+      "Patience cultivates understanding",
+      "Knowledge flowers in stillness",
+      "Truth reflects in peaceful waters",
+      "Wisdom grows in quiet gardens",
+      "Understanding dawns in silence"
+    ];
+  }
 
-const pexelsClient = createClient(PEXELS_API_KEY);
+  generateQuote() {
+    // 30% chance to use a simple philosophical quote
+    if (Math.random() < 0.3) {
+      return this.philosophical[Math.floor(Math.random() * this.philosophical.length)];
+    }
 
-const App = () => {
-  return (
-    <div className="min-h-screen bg-gray-900">
-      <QuoteGenerator pexelsClient={pexelsClient} />
-    </div>
-  );
-};
+    // Otherwise generate a composite quote
+    const beginning = this.beginnings[Math.floor(Math.random() * this.beginnings.length)];
+    const middle = this.middles[Math.floor(Math.random() * this.middles.length)];
+    const ending = this.endings[Math.floor(Math.random() * this.endings.length)];
 
-export default App;
+    return `${beginning} ${middle}, ${ending}.`;
+  }
+}
+
+export const quoteGenerator = new QuoteGenerator();
+
+// src/services/gradientGenerator.js
+class GradientGenerator {
+  constructor() {
+    this.colors = [
+      ['#2E3192', '#1BFFFF'],
+      ['#D4145A', '#FBB03B'],
+      ['#009245', '#FCEE21'],
+      ['#662D8C', '#ED1E79'],
+      ['#EE9CA7', '#FFDDE1'],
+      ['#614385', '#516395'],
+      ['#02AABD', '#00CDAC'],
+      ['#FF512F', '#DD2476'],
+      ['#FF61D2', '#FE9090'],
+      ['#BFF098', '#6FD6FF']
+    ];
+
+    this.patterns = [
+      'linear-gradient(45deg, {color1}, {color2})',
+      'linear-gradient(135deg, {color1}, {color2})',
+      'linear-gradient(to right, {color1}, {color2})',
+      'radial-gradient(circle at top left, {color1}, {color2})',
+      'radial-gradient(circle at center, {color1}, {color2})'
+    ];
+  }
+
+  generateGradient() {
+    const colorPair = this.colors[Math.floor(Math.random() * this.colors.length)];
+    const pattern = this.patterns[Math.floor(Math.random() * this.patterns.length)];
+    
+    return pattern
+      .replace('{color1}', colorPair[0])
+      .replace('{color2}', colorPair[1]);
+  }
+}
+
+export const gradientGenerator = new GradientGenerator();
 
 // src/components/QuoteGenerator.jsx
 import React, { useState, useEffect } from 'react';
 import { Share2, Download, RefreshCw } from 'lucide-react';
-import axios from 'axios';
+import { quoteGenerator } from '../services/quoteGenerator';
+import { gradientGenerator } from '../services/gradientGenerator';
 
-const QuoteGenerator = ({ pexelsClient }) => {
-  const [quote, setQuote] = useState('');
-  const [image, setImage] = useState(null);
-  const [loading, setLoading] = useState(false);
+const QuoteGenerator = () => {
+  const [state, setState] = useState({
+    quote: '',
+    gradient: '',
+    loading: false,
+    toast: null
+  });
 
-  const generateAIQuote = async () => {
-    try {
-      const response = await axios.post('https://api.openai.com/v1/completions', {
-        model: "gpt-3.5-turbo-instruct",
-        prompt: "Generate a profound, inspirational quote in the style of ancient wisdom or modern philosophy. Make it brief and impactful.",
-        max_tokens: 50,
-        temperature: 0.7
-      }, {
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      return response.data.choices[0].text.trim();
-    } catch (error) {
-      console.error('Error generating AI quote:', error);
-      return generateFallbackQuote();
-    }
+  const showToast = (message, type = 'info') => {
+    setState(prev => ({ ...prev, toast: { message, type } }));
+    setTimeout(() => setState(prev => ({ ...prev, toast: null })), 3000);
   };
 
-  const generateFallbackQuote = () => {
-    const templates = [
-      "The journey of {n} leads to {adj} wisdom",
-      "Within every {n} lies {adj} truth",
-      "Time reveals the {adj} nature of {n}",
-      "Beyond {n} exists {adj} possibility"
-    ];
-    const adjectives = ["eternal", "infinite", "profound", "boundless", "timeless"];
-    const nouns = ["moment", "challenge", "silence", "journey", "spirit"];
+  const generateNew = () => {
+    setState(prev => ({ ...prev, loading: true }));
     
-    const template = templates[Math.floor(Math.random() * templates.length)];
-    return template
-      .replace('{adj}', adjectives[Math.floor(Math.random() * adjectives.length)])
-      .replace('{n}', nouns[Math.floor(Math.random() * nouns.length)]);
-  };
-
-  const getRandomImage = async () => {
-    try {
-      const query = ['nature', 'abstract', 'spiritual', 'minimal'][Math.floor(Math.random() * 4)];
-      const response = await pexelsClient.photos.search({ query, per_page: 1 });
-      return response.photos[0].src.large;
-    } catch (error) {
-      console.error('Error fetching image:', error);
-      return '/fallback-background.jpg';
-    }
-  };
-
-  const generateNew = async () => {
-    setLoading(true);
-    try {
-      const [newQuote, newImage] = await Promise.all([
-        generateAIQuote(),
-        getRandomImage()
-      ]);
-      setQuote(newQuote);
-      setImage(newImage);
-    } catch (error) {
-      console.error('Error generating content:', error);
-    }
-    setLoading(false);
+    // Simulate loading for better UX
+    setTimeout(() => {
+      setState(prev => ({
+        ...prev,
+        quote: quoteGenerator.generateQuote(),
+        gradient: gradientGenerator.generateGradient(),
+        loading: false
+      }));
+    }, 500);
   };
 
   useEffect(() => {
@@ -127,96 +164,104 @@ const QuoteGenerator = ({ pexelsClient }) => {
 
   const share = async () => {
     try {
-      await navigator.share({
-        title: 'Inspirational Quote',
-        text: quote,
-        url: window.location.href
-      });
+      if (navigator.share) {
+        await navigator.share({
+          title: 'Inspirational Quote',
+          text: state.quote,
+          url: window.location.href
+        });
+      } else {
+        await navigator.clipboard.writeText(state.quote);
+        showToast('Quote copied to clipboard!', 'success');
+      }
     } catch (error) {
-      console.error('Error sharing:', error);
+      console.error('Share Error:', error);
+      showToast('Failed to share quote', 'error');
     }
   };
 
-  const download = async () => {
+  const download = () => {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    const img = new Image();
     
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      
-      // Draw image
-      ctx.drawImage(img, 0, 0);
-      
-      // Add overlay
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Add text
-      ctx.fillStyle = 'white';
-      ctx.font = '48px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      
-      // Word wrap text
-      const words = quote.split(' ');
-      let line = '';
-      let lines = [];
-      words.forEach(word => {
-        const testLine = line + word + ' ';
-        if (ctx.measureText(testLine).width > canvas.width - 60) {
-          lines.push(line);
-          line = word + ' ';
-        } else {
-          line = testLine;
-        }
-      });
-      lines.push(line);
-      
-      // Draw text lines
-      lines.forEach((line, i) => {
-        ctx.fillText(
-          line, 
-          canvas.width / 2, 
-          canvas.height / 2 - ((lines.length - 1) * 30) + (i * 60)
-        );
-      });
-      
-      // Download
-      const link = document.createElement('a');
-      link.download = 'inspiration.png';
-      link.href = canvas.toDataURL();
-      link.click();
-    };
+    // Set canvas size
+    canvas.width = 1200;
+    canvas.height = 1200;
     
-    img.src = image;
+    // Create gradient background
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, state.gradient.match(/#[A-Fa-f0-9]{6}/g)[0]);
+    gradient.addColorStop(1, state.gradient.match(/#[A-Fa-f0-9]{6}/g)[1]);
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Add overlay
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Configure text
+    ctx.fillStyle = 'white';
+    ctx.font = '60px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Word wrap
+    const words = state.quote.split(' ');
+    const lines = [];
+    let currentLine = '';
+    const maxWidth = canvas.width * 0.8;
+    
+    words.forEach(word => {
+      const testLine = currentLine + (currentLine ? ' ' : '') + word;
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > maxWidth) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    });
+    lines.push(currentLine);
+    
+    // Draw text
+    const lineHeight = 80;
+    const startY = canvas.height / 2 - (lines.length - 1) * lineHeight / 2;
+    
+    lines.forEach((line, i) => {
+      ctx.fillText(line, canvas.width / 2, startY + i * lineHeight);
+    });
+    
+    // Download
+    const link = document.createElement('a');
+    link.download = 'inspiration.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
   };
 
   return (
     <div className="max-w-2xl mx-auto p-4">
       <header className="text-gray-100 p-4 flex justify-between items-center">
-        <h1 className="text-2xl font-light">AI InspirationGen</h1>
+        <h1 className="text-2xl font-light">InspirationGen</h1>
         <button 
           onClick={generateNew}
-          disabled={loading}
-          className="p-2 rounded-full hover:bg-gray-800 transition-colors"
+          disabled={state.loading}
+          className="p-2 rounded-full hover:bg-gray-800 transition-colors disabled:opacity-50"
+          aria-label="Generate new quote"
         >
-          <RefreshCw className={`w-6 h-6 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-6 h-6 ${state.loading ? 'animate-spin' : ''}`} />
         </button>
       </header>
 
       <div 
-        className="relative aspect-square rounded-lg overflow-hidden"
+        className="relative aspect-square rounded-lg overflow-hidden transition-all duration-500"
         style={{
-          backgroundImage: `url(${image})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center'
+          background: state.gradient
         }}
       >
-        <div className="absolute inset-0 bg-black/40 flex items-center justify-center p-8">
+        <div className="absolute inset-0 bg-black/20 flex items-center justify-center p-8">
           <h2 className="text-white text-4xl font-light leading-relaxed text-center">
-            {quote}
+            {state.quote || 'Generating...'}
           </h2>
         </div>
       </div>
@@ -224,14 +269,16 @@ const QuoteGenerator = ({ pexelsClient }) => {
       <div className="mt-6 grid grid-cols-2 gap-4">
         <button 
           onClick={share}
-          className="p-4 bg-gray-800 rounded-lg text-white flex items-center justify-center gap-2 hover:bg-gray-700 transition-colors"
+          disabled={state.loading}
+          className="p-4 bg-gray-800 rounded-lg text-white flex items-center justify-center gap-2 hover:bg-gray-700 transition-colors disabled:opacity-50"
         >
           <Share2 className="w-4 h-4" />
           Share
         </button>
         <button 
           onClick={download}
-          className="p-4 bg-gray-800 rounded-lg text-white flex items-center justify-center gap-2 hover:bg-gray-700 transition-colors"
+          disabled={state.loading}
+          className="p-4 bg-gray-800 rounded-lg text-white flex items-center justify-center gap-2 hover:bg-gray-700 transition-colors disabled:opacity-50"
         >
           <Download className="w-4 h-4" />
           Download
@@ -248,6 +295,12 @@ const QuoteGenerator = ({ pexelsClient }) => {
           </button>
         ))}
       </div>
+
+      {state.toast && (
+        <div className={`fixed bottom-4 right-4 bg-${state.toast.type === 'error' ? 'red' : 'green'}-500 text-white px-4 py-2 rounded-lg`}>
+          {state.toast.message}
+        </div>
+      )}
     </div>
   );
 };
@@ -267,7 +320,7 @@ export default defineConfig({
 
 // package.json
 {
-  "name": "ai-inspiration-generator",
+  "name": "inspiration-generator",
   "version": "1.0.0",
   "type": "module",
   "scripts": {
@@ -276,9 +329,7 @@ export default defineConfig({
     "preview": "vite preview"
   },
   "dependencies": {
-    "axios": "^1.6.2",
     "lucide-react": "^0.293.0",
-    "pexels": "^1.4.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
@@ -290,12 +341,3 @@ export default defineConfig({
     "vite": "^5.0.0"
   }
 }
-
-// .env
-VITE_OPENAI_API_KEY=your_openai_api_key
-VITE_PEXELS_API_KEY=your_pexels_api_key
-
-// .gitignore
-node_modules
-dist
-.env
