@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transformers: Autobots vs. Decepticons</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1c1c1c;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+        #battle-log {
+            border: 1px solid #555;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            margin-top: 20px;
+            background: #222;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+        .health-bar {
+            height: 20px;
+            width: 200px;
+            background: red;
+            margin: 10px auto;
+            border-radius: 10px;
+        }
+        .health-fill {
+            height: 100%;
+            background: limegreen;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Transformers: Autobots vs. Decepticons</h1>
+    <h2>Optimus Prime vs. Megatron</h2>
+    
+    <div>
+        <h3>Optimus Prime</h3>
+        <div class="health-bar"><div id="optimus-health" class="health-fill" style="width: 100%;"></div></div>
+        <button id="attack-optimus">Attack</button>
+        <button id="special-optimus">Special Move</button>
+    </div>
+
+    <div>
+        <h3>Megatron</h3>
+        <div class="health-bar"><div id="megatron-health" class="health-fill" style="width: 100%;"></div></div>
+        <button id="attack-megatron" disabled>Attack</button>
+        <button id="special-megatron" disabled>Special Move</button>
+    </div>
+
+    <div id="battle-log"></div>
+
+    <script>
+        // Initial Stats
+        const optimus = { name: "Optimus Prime", health: 100, attack: 10, special: 25 };
+        const megatron = { name: "Megatron", health: 100, attack: 12, special: 20 };
+
+        let turn = "optimus";
+
+        // DOM Elements
+        const battleLog = document.getElementById("battle-log");
+        const optimusHealthBar = document.getElementById("optimus-health");
+        const megatronHealthBar = document.getElementById("megatron-health");
+        const attackOptimus = document.getElementById("attack-optimus");
+        const specialOptimus = document.getElementById("special-optimus");
+        const attackMegatron = document.getElementById("attack-megatron");
+        const specialMegatron = document.getElementById("special-megatron");
+
+        // Helper Functions
+        function logBattle(message) {
+            battleLog.innerHTML += `<p>${message}</p>`;
+            battleLog.scrollTop = battleLog.scrollHeight;
+        }
+
+        function updateHealthBars() {
+            optimusHealthBar.style.width = `${optimus.health}%`;
+            megatronHealthBar.style.width = `${megatron.health}%`;
+        }
+
+        function checkGameOver() {
+            if (optimus.health <= 0) {
+                logBattle("Optimus Prime has been defeated! Megatron wins!");
+                disableAllButtons();
+            } else if (megatron.health <= 0) {
+                logBattle("Megatron has been defeated! Optimus Prime wins!");
+                disableAllButtons();
+            }
+        }
+
+        function disableAllButtons() {
+            attackOptimus.disabled = true;
+            specialOptimus.disabled = true;
+            attackMegatron.disabled = true;
+            specialMegatron.disabled = true;
+        }
+
+        function endTurn() {
+            turn = turn === "optimus" ? "megatron" : "optimus";
+            attackOptimus.disabled = turn !== "optimus";
+            specialOptimus.disabled = turn !== "optimus";
+            attackMegatron.disabled = turn !== "megatron";
+            specialMegatron.disabled = turn !== "megatron";
+        }
+
+        // Attack Functions
+        attackOptimus.addEventListener("click", () => {
+            megatron.health -= optimus.attack;
+            logBattle("Optimus Prime attacks! Megatron takes 10 damage.");
+            updateHealthBars();
+            checkGameOver();
+            endTurn();
+        });
+
+        specialOptimus.addEventListener("click", () => {
+            megatron.health -= optimus.special;
+            logBattle("Optimus Prime uses his special move! Megatron takes 25 damage.");
+            updateHealthBars();
+            checkGameOver();
+            endTurn();
+        });
+
+        attackMegatron.addEventListener("click", () => {
+            optimus.health -= megatron.attack;
+            logBattle("Megatron attacks! Optimus Prime takes 12 damage.");
+            updateHealthBars();
+            checkGameOver();
+            endTurn();
+        });
+
+        specialMegatron.addEventListener("click", () => {
+            optimus.health -= megatron.special;
+            logBattle("Megatron uses his special move! Optimus Prime takes 20 damage.");
+            updateHealthBars();
+            checkGameOver();
+            endTurn();
+        });
+    </script>
+</body>
+</html>
