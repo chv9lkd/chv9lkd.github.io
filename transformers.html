@@ -12,6 +12,22 @@
             text-align: center;
             padding: 20px;
         }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+            button {
+                font-size: 14px;
+                padding: 10px;
+            }
+            .health-bar {
+                width: 150px;
+            }
+        }
+
+        /* Battle Log */
         #battle-log {
             border: 1px solid #555;
             padding: 10px;
@@ -19,7 +35,11 @@
             overflow-y: auto;
             margin-top: 20px;
             background: #222;
+            font-size: 16px;
+            line-height: 1.5;
         }
+
+        /* Buttons */
         button {
             background: #007bff;
             color: white;
@@ -33,6 +53,8 @@
             background: #555;
             cursor: not-allowed;
         }
+
+        /* Health Bars */
         .health-bar {
             height: 20px;
             width: 200px;
@@ -40,34 +62,15 @@
             margin: 10px auto;
             border-radius: 10px;
             position: relative;
+            overflow: hidden;
         }
         .health-fill {
             height: 100%;
             background: limegreen;
             border-radius: 10px;
         }
-        .character-selection {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-        .character-card {
-            border: 1px solid #555;
-            padding: 10px;
-            cursor: pointer;
-            background: #333;
-            color: white;
-            width: 150px;
-            text-align: center;
-            border-radius: 10px;
-        }
-        .character-card:hover {
-            background: #444;
-        }
-        .selected {
-            border: 2px solid limegreen;
-        }
+
+        /* Animations */
         .shake {
             animation: shake 0.3s ease;
         }
@@ -78,74 +81,44 @@
             75% { transform: translateX(-5px); }
             100% { transform: translateX(0); }
         }
+
+        .attack-animation {
+            animation: attack 0.5s linear;
+        }
+        @keyframes attack {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
     </style>
 </head>
 <body>
     <h1>Transformers: Autobots vs. Decepticons</h1>
-    <div id="character-select-screen">
-        <h2>Select Your Characters</h2>
-        <div class="character-selection">
-            <div class="character-card" data-character="Optimus Prime">
-                <h3>Optimus Prime</h3>
-                <p>Health: 100</p>
-                <p>Attack: 10</p>
-                <p>Special: 25</p>
-            </div>
-            <div class="character-card" data-character="Bumblebee">
-                <h3>Bumblebee</h3>
-                <p>Health: 80</p>
-                <p>Attack: 8</p>
-                <p>Special: 20</p>
-            </div>
-            <div class="character-card" data-character="Megatron">
-                <h3>Megatron</h3>
-                <p>Health: 120</p>
-                <p>Attack: 12</p>
-                <p>Special: 30</p>
-            </div>
-            <div class="character-card" data-character="Starscream">
-                <h3>Starscream</h3>
-                <p>Health: 90</p>
-                <p>Attack: 9</p>
-                <p>Special: 22</p>
-            </div>
-        </div>
-        <button id="start-game" disabled>Start Game</button>
+    <h2 id="player-turn"></h2>
+    <div>
+        <h3 id="player1-name"></h3>
+        <div class="health-bar"><div id="player1-health" class="health-fill" style="width: 100%;"></div></div>
+        <button id="player1-attack" disabled>Attack ⚡</button>
+        <button id="player1-special" disabled>Special Move 🔥</button>
     </div>
 
-    <div id="battle-screen" style="display: none;">
-        <h2 id="player-turn"></h2>
-        <div>
-            <h3 id="player1-name"></h3>
-            <div class="health-bar"><div id="player1-health" class="health-fill" style="width: 100%;"></div></div>
-            <button id="player1-attack" disabled>Attack</button>
-            <button id="player1-special" disabled>Special Move</button>
-        </div>
-
-        <div>
-            <h3 id="player2-name"></h3>
-            <div class="health-bar"><div id="player2-health" class="health-fill" style="width: 100%;"></div></div>
-            <button id="player2-attack" disabled>Attack</button>
-            <button id="player2-special" disabled>Special Move</button>
-        </div>
-
-        <div id="battle-log"></div>
+    <div>
+        <h3 id="player2-name"></h3>
+        <div class="health-bar"><div id="player2-health" class="health-fill" style="width: 100%;"></div></div>
+        <button id="player2-attack" disabled>Attack ⚡</button>
+        <button id="player2-special" disabled>Special Move 🔥</button>
     </div>
+
+    <div id="battle-log"></div>
 
     <script>
         // Character Data
         const characters = {
             "Optimus Prime": { health: 100, attack: 10, special: 25 },
-            "Bumblebee": { health: 80, attack: 8, special: 20 },
             "Megatron": { health: 120, attack: 12, special: 30 },
-            "Starscream": { health: 90, attack: 9, special: 22 },
         };
 
         // DOM Elements
-        const charCards = document.querySelectorAll(".character-card");
-        const startButton = document.getElementById("start-game");
-        const battleScreen = document.getElementById("battle-screen");
-        const charSelectScreen = document.getElementById("character-select-screen");
         const battleLog = document.getElementById("battle-log");
         const playerTurn = document.getElementById("player-turn");
         const player1Name = document.getElementById("player1-name");
@@ -158,55 +131,43 @@
         const player2Special = document.getElementById("player2-special");
 
         // Game State
-        let player1 = null;
-        let player2 = null;
+        let player1 = { name: "Optimus Prime", ...characters["Optimus Prime"] };
+        let player2 = { name: "Megatron", ...characters["Megatron"] };
         let turn = "player1";
 
-        // Character Selection
-        charCards.forEach(card => {
-            card.addEventListener("click", () => {
-                if (!player1) {
-                    player1 = characters[card.dataset.character];
-                    player1.name = card.dataset.character;
-                    card.classList.add("selected");
-                } else if (!player2 && !card.classList.contains("selected")) {
-                    player2 = characters[card.dataset.character];
-                    player2.name = card.dataset.character;
-                    card.classList.add("selected");
-                    startButton.disabled = false;
-                }
-            });
-        });
+        // Sound Effects
+        const attackSound = new Audio('https://www.soundjay.com/button/beep-07.wav');
+        const specialSound = new Audio('https://www.soundjay.com/button/beep-08b.wav');
+        const victorySound = new Audio('https://www.soundjay.com/button/beep-03.wav');
 
-        // Start Game
-        startButton.addEventListener("click", () => {
-            charSelectScreen.style.display = "none";
-            battleScreen.style.display = "block";
-            player1Name.textContent = player1.name;
-            player2Name.textContent = player2.name;
-            playerTurn.textContent = `${player1.name}'s Turn`;
-            player1Attack.disabled = false;
-            player1Special.disabled = false;
-        });
+        // Helper Functions
+        function logBattle(message) {
+            battleLog.innerHTML += `<p>${message}</p>`;
+            battleLog.scrollTop = battleLog.scrollHeight;
+        }
 
-        // Update Health Bars
         function updateHealthBars() {
             player1HealthBar.style.width = `${player1.health}%`;
             player2HealthBar.style.width = `${player2.health}%`;
         }
 
-        // Check for Game Over
+        function playSound(sound) {
+            sound.currentTime = 0;
+            sound.play();
+        }
+
         function checkGameOver() {
             if (player1.health <= 0) {
-                battleLog.innerHTML += `<p>${player2.name} wins!</p>`;
+                logBattle(`🏆 ${player2.name} wins!`);
+                playSound(victorySound);
                 disableAllButtons();
             } else if (player2.health <= 0) {
-                battleLog.innerHTML += `<p>${player1.name} wins!</p>`;
+                logBattle(`🏆 ${player1.name} wins!`);
+                playSound(victorySound);
                 disableAllButtons();
             }
         }
 
-        // Disable Buttons
         function disableAllButtons() {
             player1Attack.disabled = true;
             player1Special.disabled = true;
@@ -214,7 +175,6 @@
             player2Special.disabled = true;
         }
 
-        // Switch Turn
         function switchTurn() {
             turn = turn === "player1" ? "player2" : "player1";
             playerTurn.textContent = `${turn === "player1" ? player1.name : player2.name}'s Turn`;
@@ -228,7 +188,10 @@
         // Player Actions
         player1Attack.addEventListener("click", () => {
             player2.health -= player1.attack;
-            battleLog.innerHTML += `<p>${player1.name} attacks ${player2.name} for ${player1.attack} damage!</p>`;
+            logBattle(`⚡ ${player1.name} attacks ${player2.name} for ${player1.attack} damage!`);
+            playSound(attackSound);
+            player2HealthBar.classList.add('shake');
+            setTimeout(() => player2HealthBar.classList.remove('shake'), 300);
             updateHealthBars();
             checkGameOver();
             switchTurn();
@@ -236,7 +199,8 @@
 
         player1Special.addEventListener("click", () => {
             player2.health -= player1.special;
-            battleLog.innerHTML += `<p>${player1.name} uses a special move on ${player2.name} for ${player1.special} damage!</p>`;
+            logBattle(`🔥 ${player1.name} uses a special move on ${player2.name} for ${player1.special} damage!`);
+            playSound(specialSound);
             updateHealthBars();
             checkGameOver();
             switchTurn();
@@ -244,7 +208,10 @@
 
         player2Attack.addEventListener("click", () => {
             player1.health -= player2.attack;
-            battleLog.innerHTML += `<p>${player2.name} attacks ${player1.name} for ${player2.attack} damage!</p>`;
+            logBattle(`⚡ ${player2.name} attacks ${player1.name} for ${player2.attack} damage!`);
+            playSound(attackSound);
+            player1HealthBar.classList.add('shake');
+            setTimeout(() => player1HealthBar.classList.remove('shake'), 300);
             updateHealthBars();
             checkGameOver();
             switchTurn();
@@ -252,7 +219,8 @@
 
         player2Special.addEventListener("click", () => {
             player1.health -= player2.special;
-            battleLog.innerHTML += `<p>${player2.name} uses a special move on ${player1.name} for ${player2.special} damage!</p>`;
+            logBattle(`🔥 ${player2.name} uses a special move on ${player1.name} for ${player2.special} damage!`);
+            playSound(specialSound);
             updateHealthBars();
             checkGameOver();
             switchTurn();
