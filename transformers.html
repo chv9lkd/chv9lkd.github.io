@@ -3,228 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transformers: Autobots vs. Decepticons</title>
+    <title>Transformers Battle</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #1c1c1c;
-            color: white;
+            background: #1e1e1e;
+            color: #fff;
             text-align: center;
             padding: 20px;
         }
 
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            body {
-                font-size: 14px;
-            }
-            button {
-                font-size: 14px;
-                padding: 10px;
-            }
-            .health-bar {
-                width: 150px;
-            }
-        }
-
-        /* Battle Log */
-        #battle-log {
-            border: 1px solid #555;
-            padding: 10px;
-            height: 200px;
-            overflow-y: auto;
+        /* Layout */
+        .battle-area {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
             margin-top: 20px;
-            background: #222;
-            font-size: 16px;
-            line-height: 1.5;
         }
 
-        /* Buttons */
-        button {
-            background: #007bff;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            margin: 5px;
-            cursor: pointer;
-        }
-        button:disabled {
-            background: #555;
-            cursor: not-allowed;
+        .character {
+            flex: 1;
+            margin: 10px;
         }
 
-        /* Health Bars */
         .health-bar {
             height: 20px;
-            width: 200px;
+            width: 80%;
             background: red;
             margin: 10px auto;
             border-radius: 10px;
             position: relative;
             overflow: hidden;
         }
+
         .health-fill {
             height: 100%;
             background: limegreen;
+            width: 100%;
             border-radius: 10px;
         }
 
-        /* Animations */
-        .shake {
-            animation: shake 0.3s ease;
-        }
-        @keyframes shake {
-            0% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            50% { transform: translateX(5px); }
-            75% { transform: translateX(-5px); }
-            100% { transform: translateX(0); }
+        /* Buttons */
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
         }
 
-        .attack-animation {
-            animation: attack 0.5s linear;
+        button:disabled {
+            background: #555;
         }
-        @keyframes attack {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
+
+        /* Log */
+        #battle-log {
+            background: #222;
+            border: 1px solid #555;
+            height: 200px;
+            overflow-y: auto;
+            margin: 20px auto;
+            padding: 10px;
+            font-size: 14px;
+            line-height: 1.5;
         }
     </style>
 </head>
 <body>
-    <h1>Transformers: Autobots vs. Decepticons</h1>
+    <h1>Transformers Battle</h1>
     <h2 id="player-turn"></h2>
-    <div>
-        <h3 id="player1-name"></h3>
-        <div class="health-bar"><div id="player1-health" class="health-fill" style="width: 100%;"></div></div>
-        <button id="player1-attack" disabled>Attack ⚡</button>
-        <button id="player1-special" disabled>Special Move 🔥</button>
-    </div>
 
-    <div>
-        <h3 id="player2-name"></h3>
-        <div class="health-bar"><div id="player2-health" class="health-fill" style="width: 100%;"></div></div>
-        <button id="player2-attack" disabled>Attack ⚡</button>
-        <button id="player2-special" disabled>Special Move 🔥</button>
+    <div class="battle-area">
+        <!-- Player 1 -->
+        <div class="character" id="player1-area">
+            <h3 id="player1-name">Optimus Prime</h3>
+            <div class="health-bar">
+                <div id="player1-health" class="health-fill"></div>
+            </div>
+            <button id="player1-attack" disabled>Attack ⚡</button>
+            <button id="player1-special" disabled>Special 🔥</button>
+        </div>
+
+        <!-- Player 2 -->
+        <div class="character" id="player2-area">
+            <h3 id="player2-name">Megatron</h3>
+            <div class="health-bar">
+                <div id="player2-health" class="health-fill"></div>
+            </div>
+            <button id="player2-attack" disabled>Attack ⚡</button>
+            <button id="player2-special" disabled>Special 🔥</button>
+        </div>
     </div>
 
     <div id="battle-log"></div>
 
     <script>
-        // Character Data
-        const characters = {
-            "Optimus Prime": { health: 100, attack: 10, special: 25 },
-            "Megatron": { health: 120, attack: 12, special: 30 },
+        // Basic Game Data
+        const players = {
+            player1: { name: "Optimus Prime", health: 100, attack: 15, special: 30 },
+            player2: { name: "Megatron", health: 100, attack: 20, special: 25 },
         };
 
         // DOM Elements
-        const battleLog = document.getElementById("battle-log");
-        const playerTurn = document.getElementById("player-turn");
-        const player1Name = document.getElementById("player1-name");
         const player1HealthBar = document.getElementById("player1-health");
-        const player2Name = document.getElementById("player2-name");
         const player2HealthBar = document.getElementById("player2-health");
-        const player1Attack = document.getElementById("player1-attack");
-        const player1Special = document.getElementById("player1-special");
-        const player2Attack = document.getElementById("player2-attack");
-        const player2Special = document.getElementById("player2-special");
+        const player1AttackBtn = document.getElementById("player1-attack");
+        const player1SpecialBtn = document.getElementById("player1-special");
+        const player2AttackBtn = document.getElementById("player2-attack");
+        const player2SpecialBtn = document.getElementById("player2-special");
+        const battleLog = document.getElementById("battle-log");
+        const turnIndicator = document.getElementById("player-turn");
 
         // Game State
-        let player1 = { name: "Optimus Prime", ...characters["Optimus Prime"] };
-        let player2 = { name: "Megatron", ...characters["Megatron"] };
-        let turn = "player1";
+        let currentTurn = "player1";
 
-        // Sound Effects
-        const attackSound = new Audio('https://www.soundjay.com/button/beep-07.wav');
-        const specialSound = new Audio('https://www.soundjay.com/button/beep-08b.wav');
-        const victorySound = new Audio('https://www.soundjay.com/button/beep-03.wav');
+        // Utility Functions
+        function updateHealthBars() {
+            player1HealthBar.style.width = `${players.player1.health}%`;
+            player2HealthBar.style.width = `${players.player2.health}%`;
+        }
 
-        // Helper Functions
-        function logBattle(message) {
+        function logMessage(message) {
             battleLog.innerHTML += `<p>${message}</p>`;
             battleLog.scrollTop = battleLog.scrollHeight;
         }
 
-        function updateHealthBars() {
-            player1HealthBar.style.width = `${player1.health}%`;
-            player2HealthBar.style.width = `${player2.health}%`;
+        function switchTurn() {
+            currentTurn = currentTurn === "player1" ? "player2" : "player1";
+            turnIndicator.textContent = `${players[currentTurn].name}'s Turn`;
+            updateButtons();
         }
 
-        function playSound(sound) {
-            sound.currentTime = 0;
-            sound.play();
+        function updateButtons() {
+            const isPlayer1Turn = currentTurn === "player1";
+            player1AttackBtn.disabled = !isPlayer1Turn;
+            player1SpecialBtn.disabled = !isPlayer1Turn;
+            player2AttackBtn.disabled = isPlayer1Turn;
+            player2SpecialBtn.disabled = isPlayer1Turn;
         }
 
         function checkGameOver() {
-            if (player1.health <= 0) {
-                logBattle(`🏆 ${player2.name} wins!`);
-                playSound(victorySound);
+            if (players.player1.health <= 0) {
+                logMessage(`🏆 ${players.player2.name} wins!`);
                 disableAllButtons();
-            } else if (player2.health <= 0) {
-                logBattle(`🏆 ${player1.name} wins!`);
-                playSound(victorySound);
+            } else if (players.player2.health <= 0) {
+                logMessage(`🏆 ${players.player1.name} wins!`);
                 disableAllButtons();
             }
         }
 
         function disableAllButtons() {
-            player1Attack.disabled = true;
-            player1Special.disabled = true;
-            player2Attack.disabled = true;
-            player2Special.disabled = true;
+            player1AttackBtn.disabled = true;
+            player1SpecialBtn.disabled = true;
+            player2AttackBtn.disabled = true;
+            player2SpecialBtn.disabled = true;
         }
 
-        function switchTurn() {
-            turn = turn === "player1" ? "player2" : "player1";
-            playerTurn.textContent = `${turn === "player1" ? player1.name : player2.name}'s Turn`;
+        // Event Listeners
+        player1AttackBtn.addEventListener("click", () => {
+            players.player2.health -= players.player1.attack;
+            logMessage(`⚡ ${players.player1.name} attacks ${players.player2.name} for ${players.player1.attack} damage!`);
+            updateHealthBars();
+            checkGameOver();
+            switchTurn();
+        });
 
-            player1Attack.disabled = turn !== "player1";
-            player1Special.disabled = turn !== "player1";
-            player2Attack.disabled = turn !== "player2";
-            player2Special.disabled = turn !== "player2";
+        player1SpecialBtn.addEventListener("click", () => {
+            players.player2.health -= players.player1.special;
+            logMessage(`🔥 ${players.player1.name} uses a special move on ${players.player2.name} for ${players.player1.special} damage!`);
+            updateHealthBars();
+            checkGameOver();
+            switchTurn();
+        });
+
+        player2AttackBtn.addEventListener("click", () => {
+            players.player1.health -= players.player2.attack;
+            logMessage(`⚡ ${players.player2.name} attacks ${players.player1.name} for ${players.player2.attack} damage!`);
+            updateHealthBars();
+            checkGameOver();
+            switchTurn();
+        });
+
+        player2SpecialBtn.addEventListener("click", () => {
+            players.player1.health -= players.player2.special;
+            logMessage(`🔥 ${players.player2.name} uses a special move on ${players.player1.name} for ${players.player2.special} damage!`);
+            updateHealthBars();
+            checkGameOver();
+            switchTurn();
+        });
+
+        // Initialize Game
+        function initializeGame() {
+            players.player1.health = 100;
+            players.player2.health = 100;
+            currentTurn = "player1";
+            updateHealthBars();
+            updateButtons();
+            turnIndicator.textContent = `${players[currentTurn].name}'s Turn`;
+            battleLog.innerHTML = "";
         }
 
-        // Player Actions
-        player1Attack.addEventListener("click", () => {
-            player2.health -= player1.attack;
-            logBattle(`⚡ ${player1.name} attacks ${player2.name} for ${player1.attack} damage!`);
-            playSound(attackSound);
-            player2HealthBar.classList.add('shake');
-            setTimeout(() => player2HealthBar.classList.remove('shake'), 300);
-            updateHealthBars();
-            checkGameOver();
-            switchTurn();
-        });
-
-        player1Special.addEventListener("click", () => {
-            player2.health -= player1.special;
-            logBattle(`🔥 ${player1.name} uses a special move on ${player2.name} for ${player1.special} damage!`);
-            playSound(specialSound);
-            updateHealthBars();
-            checkGameOver();
-            switchTurn();
-        });
-
-        player2Attack.addEventListener("click", () => {
-            player1.health -= player2.attack;
-            logBattle(`⚡ ${player2.name} attacks ${player1.name} for ${player2.attack} damage!`);
-            playSound(attackSound);
-            player1HealthBar.classList.add('shake');
-            setTimeout(() => player1HealthBar.classList.remove('shake'), 300);
-            updateHealthBars();
-            checkGameOver();
-            switchTurn();
-        });
-
-        player2Special.addEventListener("click", () => {
-            player1.health -= player2.special;
-            logBattle(`🔥 ${player2.name} uses a special move on ${player1.name} for ${player2.special} damage!`);
-            playSound(specialSound);
-            updateHealthBars();
-            checkGameOver();
-            switchTurn();
-        });
+        initializeGame();
     </script>
 </body>
 </html>
