@@ -185,13 +185,20 @@
             }
         });
 
-        player2Attack.addEventListener("click", () => {
-            players.player1.health -= 15;
-            players.player2.power += 10;
-            logAction(`⚡ Megatron attacks Optimus Prime for 15 damage!`);
+        player1Defend.addEventListener("click", () => {
+            players.player1.isDefending = true;
+            logAction(`🛡️ Optimus Prime is defending!`);
+            switchTurn();
+        });
+
+        player1Special.addEventListener("click", () => {
+            players.player2.health -= 30;
+            players.player1.power -= 50;
+            players.player1.specials--;
+            logAction(`🔥 Optimus Prime uses a special move on Megatron for 30 damage!`);
             updateBars();
-            if (players.player1.health <= 0) {
-                logAction(`🏆 Megatron wins!`);
+            if (players.player2.health <= 0) {
+                logAction(`🏆 Optimus Prime wins!`);
             } else {
                 switchTurn();
             }
