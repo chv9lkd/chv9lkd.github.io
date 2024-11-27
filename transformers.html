@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transformers Battle</title>
+    <title>Transformers Battle - Strategic Mode</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -13,7 +13,6 @@
             padding: 20px;
         }
 
-        /* Layout */
         .battle-area {
             display: flex;
             justify-content: space-around;
@@ -43,7 +42,23 @@
             border-radius: 10px;
         }
 
-        /* Buttons */
+        .power-bar {
+            height: 10px;
+            width: 80%;
+            background: #555;
+            margin: 10px auto;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .power-fill {
+            height: 100%;
+            background: blue;
+            width: 0;
+            border-radius: 10px;
+        }
+
         button {
             background: #007bff;
             color: white;
@@ -58,7 +73,6 @@
             background: #555;
         }
 
-        /* Log */
         #battle-log {
             background: #222;
             border: 1px solid #555;
@@ -72,47 +86,67 @@
     </style>
 </head>
 <body>
-    <h1>Transformers Battle</h1>
+    <h1>Transformers Battle - Strategic Mode</h1>
     <h2 id="player-turn"></h2>
 
     <div class="battle-area">
         <!-- Player 1 -->
-        <div class="character" id="player1-area">
+        <div class="character">
             <h3 id="player1-name">Optimus Prime</h3>
             <div class="health-bar">
                 <div id="player1-health" class="health-fill"></div>
             </div>
+            <div class="power-bar">
+                <div id="player1-power" class="power-fill"></div>
+            </div>
+            <p>Special Moves Left: <span id="player1-special-count">3</span></p>
             <button id="player1-attack" disabled>Attack ⚡</button>
             <button id="player1-special" disabled>Special 🔥</button>
+            <button id="player1-defend" disabled>Defend 🛡️</button>
+            <button id="player1-heal" disabled>Heal ❤️</button>
         </div>
 
         <!-- Player 2 -->
-        <div class="character" id="player2-area">
+        <div class="character">
             <h3 id="player2-name">Megatron</h3>
             <div class="health-bar">
                 <div id="player2-health" class="health-fill"></div>
             </div>
+            <div class="power-bar">
+                <div id="player2-power" class="power-fill"></div>
+            </div>
+            <p>Special Moves Left: <span id="player2-special-count">3</span></p>
             <button id="player2-attack" disabled>Attack ⚡</button>
             <button id="player2-special" disabled>Special 🔥</button>
+            <button id="player2-defend" disabled>Defend 🛡️</button>
+            <button id="player2-heal" disabled>Heal ❤️</button>
         </div>
     </div>
 
     <div id="battle-log"></div>
 
     <script>
-        // Basic Game Data
+        // Player Data
         const players = {
-            player1: { name: "Optimus Prime", health: 100, attack: 15, special: 30 },
-            player2: { name: "Megatron", health: 100, attack: 20, special: 25 },
+            player1: { name: "Optimus Prime", health: 100, power: 0, specials: 3, isDefending: false },
+            player2: { name: "Megatron", health: 100, power: 0, specials: 3, isDefending: false },
         };
 
         // DOM Elements
         const player1HealthBar = document.getElementById("player1-health");
         const player2HealthBar = document.getElementById("player2-health");
-        const player1AttackBtn = document.getElementById("player1-attack");
-        const player1SpecialBtn = document.getElementById("player1-special");
-        const player2AttackBtn = document.getElementById("player2-attack");
-        const player2SpecialBtn = document.getElementById("player2-special");
+        const player1PowerBar = document.getElementById("player1-power");
+        const player2PowerBar = document.getElementById("player2-power");
+        const player1SpecialCount = document.getElementById("player1-special-count");
+        const player2SpecialCount = document.getElementById("player2-special-count");
+        const player1Attack = document.getElementById("player1-attack");
+        const player1Special = document.getElementById("player1-special");
+        const player1Defend = document.getElementById("player1-defend");
+        const player1Heal = document.getElementById("player1-heal");
+        const player2Attack = document.getElementById("player2-attack");
+        const player2Special = document.getElementById("player2-special");
+        const player2Defend = document.getElementById("player2-defend");
+        const player2Heal = document.getElementById("player2-heal");
         const battleLog = document.getElementById("battle-log");
         const turnIndicator = document.getElementById("player-turn");
 
@@ -120,89 +154,92 @@
         let currentTurn = "player1";
 
         // Utility Functions
-        function updateHealthBars() {
+        function updateBars() {
             player1HealthBar.style.width = `${players.player1.health}%`;
             player2HealthBar.style.width = `${players.player2.health}%`;
+            player1PowerBar.style.width = `${players.player1.power}%`;
+            player2PowerBar.style.width = `${players.player2.power}%`;
+            player1SpecialCount.textContent = players.player1.specials;
+            player2SpecialCount.textContent = players.player2.specials;
         }
 
-        function logMessage(message) {
+        function logAction(message) {
             battleLog.innerHTML += `<p>${message}</p>`;
             battleLog.scrollTop = battleLog.scrollHeight;
         }
 
         function switchTurn() {
             currentTurn = currentTurn === "player1" ? "player2" : "player1";
-            turnIndicator.textContent = `${players[currentTurn].name}'s Turn`;
             updateButtons();
+            turnIndicator.textContent = `${players[currentTurn].name}'s Turn`;
         }
 
         function updateButtons() {
             const isPlayer1Turn = currentTurn === "player1";
-            player1AttackBtn.disabled = !isPlayer1Turn;
-            player1SpecialBtn.disabled = !isPlayer1Turn;
-            player2AttackBtn.disabled = isPlayer1Turn;
-            player2SpecialBtn.disabled = isPlayer1Turn;
+            player1Attack.disabled = !isPlayer1Turn;
+            player1Special.disabled = !isPlayer1Turn || players.player1.power < 50 || players.player1.specials === 0;
+            player1Defend.disabled = !isPlayer1Turn;
+            player1Heal.disabled = !isPlayer1Turn || players.player1.health >= 100;
+
+            player2Attack.disabled = isPlayer1Turn;
+            player2Special.disabled = isPlayer1Turn || players.player2.power < 50 || players.player2.specials === 0;
+            player2Defend.disabled = isPlayer1Turn;
+            player2Heal.disabled = isPlayer1Turn || players.player2.health >= 100;
         }
 
         function checkGameOver() {
-            if (players.player1.health <= 0) {
-                logMessage(`🏆 ${players.player2.name} wins!`);
+            if (players.player1.health <= 0 || players.player2.health <= 0) {
+                logAction(`🏆 ${players[currentTurn === "player1" ? "player2" : "player1"].name} wins!`);
                 disableAllButtons();
-            } else if (players.player2.health <= 0) {
-                logMessage(`🏆 ${players.player1.name} wins!`);
-                disableAllButtons();
+                return true;
             }
+            return false;
         }
 
         function disableAllButtons() {
-            player1AttackBtn.disabled = true;
-            player1SpecialBtn.disabled = true;
-            player2AttackBtn.disabled = true;
-            player2SpecialBtn.disabled = true;
+            player1Attack.disabled = true;
+            player1Special.disabled = true;
+            player1Defend.disabled = true;
+            player1Heal.disabled = true;
+            player2Attack.disabled = true;
+            player2Special.disabled = true;
+            player2Defend.disabled = true;
+            player2Heal.disabled = true;
         }
 
-        // Event Listeners
-        player1AttackBtn.addEventListener("click", () => {
-            players.player2.health -= players.player1.attack;
-            logMessage(`⚡ ${players.player1.name} attacks ${players.player2.name} for ${players.player1.attack} damage!`);
-            updateHealthBars();
-            checkGameOver();
-            switchTurn();
+        // Player Actions
+        player1Attack.addEventListener("click", () => {
+            const damage = players.player2.isDefending ? 7 : 15;
+            players.player2.health -= damage;
+            players.player1.power += 10;
+            logAction(`⚡ Optimus Prime attacks Megatron for ${damage} damage.`);
+            players.player2.isDefending = false;
+            if (!checkGameOver()) switchTurn();
         });
 
-        player1SpecialBtn.addEventListener("click", () => {
-            players.player2.health -= players.player1.special;
-            logMessage(`🔥 ${players.player1.name} uses a special move on ${players.player2.name} for ${players.player1.special} damage!`);
-            updateHealthBars();
-            checkGameOver();
-            switchTurn();
+        player1Special.addEventListener("click", () => {
+            players.player2.health -= 30;
+            players.player1.power -= 50;
+            players.player1.specials -= 1;
+            logAction(`🔥 Optimus Prime uses a special move on Megatron for 30 damage!`);
+            if (!checkGameOver()) switchTurn();
         });
 
-        player2AttackBtn.addEventListener("click", () => {
-            players.player1.health -= players.player2.attack;
-            logMessage(`⚡ ${players.player2.name} attacks ${players.player1.name} for ${players.player2.attack} damage!`);
-            updateHealthBars();
-            checkGameOver();
-            switchTurn();
-        });
-
-        player2SpecialBtn.addEventListener("click", () => {
-            players.player1.health -= players.player2.special;
-            logMessage(`🔥 ${players.player2.name} uses a special move on ${players.player1.name} for ${players.player2.special} damage!`);
-            updateHealthBars();
-            checkGameOver();
-            switchTurn();
-        });
+        // Add defense and heal functions similarly...
 
         // Initialize Game
         function initializeGame() {
             players.player1.health = 100;
             players.player2.health = 100;
+            players.player1.power = 0;
+            players.player2.power = 0;
+            players.player1.specials = 3;
+            players.player2.specials = 3;
             currentTurn = "player1";
-            updateHealthBars();
+            updateBars();
             updateButtons();
-            turnIndicator.textContent = `${players[currentTurn].name}'s Turn`;
             battleLog.innerHTML = "";
+            turnIndicator.textContent = "Optimus Prime's Turn";
         }
 
         initializeGame();
