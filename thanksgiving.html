@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thanksgiving Trivia Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #fff7e6;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+    }
+    #game-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: #fef4db;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .hidden {
+      display: none;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      color: #fff;
+      background: #ff8c42;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #ff7a21;
+    }
+    input {
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px 0;
+      width: calc(100% - 22px);
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <h1>🦃 Thanksgiving Trivia Game 🦃</h1>
+    <div id="game-intro">
+      <p>Test your knowledge about this beloved holiday!</p>
+      <button id="start-game">Start Game</button>
+    </div>
+    <div id="game-round" class="hidden">
+      <h2 id="round-title"></h2>
+      <div id="question-container">
+        <p id="question-text"></p>
+        <p id="category-text"></p>
+        <input type="text" id="player-answer" placeholder="Your answer">
+        <button id="submit-answer">Submit Answer</button>
+      </div>
+      <div id="feedback" class="hidden"></div>
+    </div>
+    <div id="game-results" class="hidden">
+      <h2>🏆 Game Over 🏆</h2>
+      <p id="final-score"></p>
+      <p id="performance-rating"></p>
+      <button id="restart-game">Play Again</button>
+    </div>
+  </div>
+  <script>
+    const triviaQuestions = [
+      { question: "In what year was the first Thanksgiving celebrated by the Pilgrims?", answer: "1621", category: "History" },
+      { question: "Who was the governor of Plymouth Colony during the first Thanksgiving?", answer: "William Bradford", category: "History" },
+      { question: "Which Native American tribe helped the Pilgrims survive and was present at the first Thanksgiving?", answer: "Wampanoag", category: "History" },
+      { question: "In what year did President Abraham Lincoln officially declare Thanksgiving a national holiday?", answer: "1863", category: "History" },
+      { question: "How long did the first Thanksgiving feast last?", answer: "3 days", category: "History" },
+      { question: "What percentage of Americans eat turkey on Thanksgiving?", answer: "88%", category: "Food" },
+      { question: "Which Native American crop is most commonly served at Thanksgiving?", answer: "Corn", category: "Food" },
+      { question: "What is the most popular pie served at Thanksgiving?", answer: "Pumpkin pie", category: "Food" },
+      { question: "Approximately how many turkeys are eaten in the United States on Thanksgiving?", answer: "46 million", category: "Food" },
+      { question: "What is the average number of calories consumed in a Thanksgiving meal?", answer: "4,500", category: "Food" },
+      { question: "In what year did the Macy's Thanksgiving Day Parade first take place?", answer: "1924", category: "Tradition" },
+      { question: "What NFL team has played a Thanksgiving Day game every year since 1934?", answer: "Detroit Lions", category: "Tradition" },
+      { question: "What is the name of the presidential turkey pardon ceremony that happens annually?", answer: "National Turkey Presentation", category: "Tradition" },
+      { question: "Which U.S. state was the first to make Thanksgiving an official holiday?", answer: "New York", category: "Tradition" },
+      { question: "In which city did the first Thanksgiving take place?", answer: "Plymouth", category: "Geography" },
+      { question: "Which U.S. state was the location of the first Thanksgiving?", answer: "Massachusetts", category: "Geography" },
+      { question: "Which state produces the most turkeys in the United States?", answer: "Minnesota", category: "Geography" },
+      { question: "Which state grows the most pumpkins used for Thanksgiving pies?", answer: "Illinois", category: "Geography" },
+      { question: "In which city is the Macy's Thanksgiving Day Parade held?", answer: "New York City", category: "Geography" },
+    ];
+
+    let currentRound = 1;
+    let currentQuestionIndex = 0;
+    let score = 0;
+    const questionsPerRound = 10;
+
+    const startButton = document.getElementById("start-game");
+    const roundTitle = document.getElementById("round-title");
+    const questionText = document.getElementById("question-text");
+    const categoryText = document.getElementById("category-text");
+    const playerAnswerInput = document.getElementById("player-answer");
+    const submitAnswerButton = document.getElementById("submit-answer");
+    const feedbackDiv = document.getElementById("feedback");
+    const gameResults = document.getElementById("game-results");
+    const finalScoreText = document.getElementById("final-score");
+    const performanceRatingText = document.getElementById("performance-rating");
+    const restartButton = document.getElementById("restart-game");
+
+    let roundQuestions = [];
+
+    startButton.addEventListener("click", startGame);
+    submitAnswerButton.addEventListener("click", submitAnswer);
+    restartButton.addEventListener("click", restartGame);
+
+    function startGame() {
+      currentRound = 1;
+      score = 0;
+      document.getElementById("game-intro").classList.add("hidden");
+      document.getElementById("game-round").classList.remove("hidden");
+      loadNextRound();
+    }
+
+    function loadNextRound() {
+      roundQuestions = triviaQuestions.sort(() => 0.5 - Math.random()).slice(0, questionsPerRound);
+      currentQuestionIndex = 0;
+      roundTitle.textContent = `Round ${currentRound}`;
+      loadNextQuestion();
+    }
+
+    function loadNextQuestion() {
+      const currentQuestion = roundQuestions[currentQuestionIndex];
+      questionText.textContent = `Question ${currentQuestionIndex + 1}: ${currentQuestion.question}`;
+      categoryText.textContent = `Category: ${currentQuestion.category}`;
+      playerAnswerInput.value = "";
+      feedbackDiv.classList.add("hidden");
+    }
+
+    function submitAnswer() {
+      const playerAnswer = playerAnswerInput.value.trim().toLowerCase();
+      const correctAnswer = roundQuestions[currentQuestionIndex].answer.toLowerCase();
+
+      feedbackDiv.classList.remove("hidden");
+      if (playerAnswer === correctAnswer) {
+        feedbackDiv.textContent = "✅ Correct!";
+        score++;
+      } else {
+        feedbackDiv.textContent = `❌ Wrong! The correct answer is: ${roundQuestions[currentQuestionIndex].answer}`;
+      }
+
+      currentQuestionIndex++;
+      if (currentQuestionIndex < roundQuestions.length) {
+        setTimeout(loadNextQuestion, 1000);
+      } else if (currentRound * questionsPerRound < triviaQuestions.length) {
+        currentRound++;
+        setTimeout(loadNextRound, 1000);
+      } else {
+        endGame();
+      }
+    }
+
+    function endGame() {
+      document.getElementById("game-round").classList.add("hidden");
+      gameResults.classList.remove("hidden");
+      finalScoreText.textContent = `Your final score: ${score}/${triviaQuestions.length}`;
+      performanceRatingText.textContent = getPerformanceRating(score);
+    }
+
+    function getPerformanceRating(score) {
+      const percentile = (score / triviaQuestions.length) * 100;
+      if (percentile === 100) return "🌟 Thanksgiving Genius! Absolute Perfect Score!";
+      if (percentile >= 90) return "🦃 Turkey Master! Exceptional Knowledge!";
+      if (percentile >= 75) return "🥧 Pie Champion! Great Job!";
+      if (percentile >= 60) return "🍽️ Good Effort! Keep Learning About Thanksgiving!";
+      return "📚 More Thanksgiving Study Needed! Don't Worry!";
+    }
+
+    function restartGame() {
+      gameResults.classList.add("hidden");
+      document.getElementById("game-intro").classList.remove("hidden");
+    }
+  </script>
+</body>
+</html>
