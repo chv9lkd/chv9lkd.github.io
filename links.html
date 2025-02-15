@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Neural Links Pro - Enterprise Bookmark Management System">
+    <title>Neural Links Pro</title>
+
+    <!-- Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.3.4/vue.global.prod.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+
+    <style>
+        /* Base styles */
+        :root {
+            --color-primary: #6366f1;
+            --color-error: #ef4444;
+            --color-surface: #ffffff;
+            --color-text: #1f2937;
+            --color-border: #e5e7eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.5;
+            color: var(--color-text);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .app {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            margin-bottom: 2rem;
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+
+        /* Form styles */
+        .form-control {
+            margin-bottom: 1rem;
+        }
+
+        .label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .input--error {
+            border-color: var(--color-error);
+        }
+
+        .error-message {
+            color: var(--color-error);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Button styles */
+        .button {
+            background: var(--color-primary);
+            color: white;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .button:hover {
+            background: #4f46e5;
+        }
+
+        .button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Bookmark list styles */
+        .bookmark-list {
+            margin-top: 2rem;
+        }
+
+        .bookmark-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .bookmark-title {
+            font-weight: 500;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .bookmark-url {
+            color: var(--color-primary);
+            word-break: break-all;
+        }
+
+        .tag-list {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .tag {
+            background: #f3f4f6;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="app">
+        <header class="header">
+            <h1 class="title">Neural Links Pro</h1>
+            <p class="subtitle">Enterprise Bookmark Management</p>
+        </header>
+
+        <!-- Bookmark Form -->
+        <form @submit.prevent="addBookmark">
+            <div class="form-control">
+                <label for="url" class="label">URL</label>
+                <input 
+                    id="url"
+                    v-model="newBookmark.url"
+                    type="url"
+                    class="input"
+                    :class="{ 'input--error': errors.url }"
+                    placeholder="https://example.com"
+                    required
+                >
+                <span v-if="errors.url" class="error-message">{{ errors.url }}</span>
+            </div>
+
+            <div class="form-control">
+                <label for="title" class="label">Title</label>
+                <input 
+                    id="title"
+                    v-model="newBookmark.title"
+                    type="text"
+                    class="input"
+                    placeholder="Bookmark Title"
+                    required
+                >
+            </div>
+
+            <div class="form-control">
+                <label for="tags" class="label">Tags (comma-separated)</label>
+                <input 
+                    id="tags"
+                    v-model="newBookmark.tags"
+                    type="text"
+                    class="input"
+                    placeholder="tech, reference, tutorial"
+                >
+            </div>
+
+            <button type="submit" class="button" :disabled="!isValidForm">
+                Add Bookmark
+            </button>
+        </form>
+
+        <!-- Bookmark List -->
+        <div class="bookmark-list">
+            <div v-for="bookmark in bookmarks" :key="bookmark.url" class="bookmark-card">
+                <h3 class="bookmark-title">{{ bookmark.title }}</h3>
+                <a :href="bookmark.url" class="bookmark-url" target="_blank" rel="noopener">
+                    {{ bookmark.url }}
+                </a>
+                <div class="tag-list">
+                    <span v-for="tag in bookmark.tagList" :key="tag" class="tag">
+                        {{ tag }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue;
+
+        createApp({
+            setup() {
+                // State
+                const newBookmark = ref({
+                    url: '',
+                    title: '',
+                    tags: ''
+                });
+                const bookmarks = ref([]);
+                const errors = ref({});
+
+                // Computed
+                const isValidForm = computed(() => {
+                    return newBookmark.value.url && newBookmark.value.title;
+                });
+
+                // Methods
+                function validateUrl(url) {
+                    try {
+                        new URL(url);
+                        return true;
+                    } catch {
+                        return false;
+                    }
+                }
+
+                function addBookmark() {
+                    // Validate URL
+                    if (!validateUrl(newBookmark.value.url)) {
+                        errors.value.url = 'Please enter a valid URL';
+                        return;
+                    }
+                    errors.value.url = '';
+
+                    // Create bookmark object
+                    const bookmark = {
+                        url: newBookmark.value.url,
+                        title: newBookmark.value.title,
+                        tagList: newBookmark.value.tags
+                            .split(',')
+                            .map(tag => tag.trim())
+                            .filter(tag => tag)
+                    };
+
+                    // Add to bookmarks
+                    bookmarks.value.unshift(bookmark);
+
+                    // Reset form
+                    newBookmark.value = {
+                        url: '',
+                        title: '',
+                        tags: ''
+                    };
+                }
+
+                return {
+                    newBookmark,
+                    bookmarks,
+                    errors,
+                    isValidForm,
+                    addBookmark
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
