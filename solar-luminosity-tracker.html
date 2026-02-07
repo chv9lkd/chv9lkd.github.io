@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Luminosity Tracker</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Lucide Icons as SVG components
+        const Sun = ({ className, ...props }) => (
+            <svg className={className} {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="4"/>
+                <path d="M12 2v2"/>
+                <path d="M12 20v2"/>
+                <path d="m4.93 4.93 1.41 1.41"/>
+                <path d="m17.66 17.66 1.41 1.41"/>
+                <path d="M2 12h2"/>
+                <path d="M20 12h2"/>
+                <path d="m6.34 17.66-1.41 1.41"/>
+                <path d="m19.07 4.93-1.41 1.41"/>
+            </svg>
+        );
+        
+        const Cloud = ({ className, ...props }) => (
+            <svg className={className} {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/>
+            </svg>
+        );
+        
+        const TrendingUp = ({ className, ...props }) => (
+            <svg className={className} {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+                <polyline points="16 7 22 7 22 13"/>
+            </svg>
+        );
+        
+        const Calendar = ({ className, ...props }) => (
+            <svg className={className} {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
+                <line x1="16" x2="16" y1="2" y2="6"/>
+                <line x1="8" x2="8" y1="2" y2="6"/>
+                <line x1="3" x2="21" y1="10" y2="10"/>
+            </svg>
+        );
+        
+        const MapPin = ({ className, ...props }) => (
+            <svg className={className} {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
+                <circle cx="12" cy="10" r="3"/>
+            </svg>
+        );
+        
+        const Zap = ({ className, ...props }) => (
+            <svg className={className} {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+        );
+
+        const LuminosityApp = () => {
+            const [location, setLocation] = useState(null);
+            const [currentData, setCurrentData] = useState(null);
+            const [historicalData, setHistoricalData] = useState([]);
+            const [forecast, setForecast] = useState([]);
+            const [loading, setLoading] = useState(true);
+            const [view, setView] = useState('current');
+            const [timeRange, setTimeRange] = useState('daily');
+
+            useEffect(() => {
+                getDeviceLocation();
+            }, []);
+
+            const getDeviceLocation = () => {
+                if (navigator.geolocation) {
+                    navigator.geolocation.getCurrentPosition(
+                        (position) => {
+                            const loc = {
+                                lat: position.coords.latitude,
+                                lon: position.coords.longitude
+                            };
+                            setLocation(loc);
+                            fetchLuminosityData(loc);
+                        },
+                        () => {
+                            const defaultLoc = { lat: 37.7749, lon: -122.4194 };
+                            setLocation(defaultLoc);
+                            fetchLuminosityData(defaultLoc);
+                        }
+                    );
+                } else {
+                    const defaultLoc = { lat: 37.7749, lon: -122.4194 };
+                    setLocation(defaultLoc);
+                    fetchLuminosityData(defaultLoc);
+                }
+            };
+
+            const fetchLuminosityData = async (loc) => {
+                setLoading(true);
+                try {
+                    const weatherRes = await fetch(
+                        `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,relative_humidity_2m,cloud_cover,is_day,sunshine_duration&hourly=cloud_cover,sunshine_duration,direct_radiation,diffuse_radiation&daily=sunshine_duration,precipitation_sum&timezone=auto&forecast_days=7`
+                    );
+                    const weatherData = await weatherRes.json();
+                    
+                    const current = calculateLuminosity(weatherData);
+                    setCurrentData(current);
+                    
+                    const historical = generateHistoricalData(weatherData);
+                    setHistoricalData(historical);
+                    
+                    const forecastData = generateForecast(weatherData);
+                    setForecast(forecastData);
+                    
+                    setLoading(false);
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                    setLoading(false);
+                }
+            };
+
+            const calculateLuminosity = (data) => {
+                const current = data.current;
+                const isDaytime = current.is_day === 1;
+                
+                let luminosity = 0;
+                
+                if (isDaytime) {
+                    luminosity = 100;
+                    
+                    const cloudCover = current.cloud_cover || 0;
+                    luminosity = luminosity * (1 - cloudCover / 100);
+                    
+                    const hour = new Date().getHours();
+                    const solarAngleFactor = calculateSolarAngleFactor(hour);
+                    luminosity = luminosity * solarAngleFactor;
+                    
+                    const humidity = current.relative_humidity_2m || 50;
+                    const humidityFactor = 1 - (humidity - 50) / 200;
+                    luminosity = luminosity * Math.max(humidityFactor, 0.7);
+                }
+                
+                const solarPotential = (luminosity / 100) * 1.0;
+                
+                return {
+                    luminosity: Math.round(luminosity * 10) / 10,
+                    cloudCover: current.cloud_cover || 0,
+                    isDaytime,
+                    solarPotential: Math.round(solarPotential * 1000) / 1000,
+                    humidity: current.relative_humidity_2m,
+                    temperature: current.temperature_2m,
+                    timestamp: new Date()
+                };
+            };
+
+            const calculateSolarAngleFactor = (hour) => {
+                const solarNoon = 12;
+                const hourDiff = Math.abs(hour - solarNoon);
+                if (hourDiff > 6) return 0;
+                return Math.cos((hourDiff / 6) * (Math.PI / 2));
+            };
+
+            const generateHistoricalData = (data) => {
+                const hourlyData = [];
+                const hours = data.hourly.cloud_cover.slice(0, 168);
+                
+                for (let i = 0; i < hours.length; i++) {
+                    const timestamp = new Date();
+                    timestamp.setHours(timestamp.getHours() - (hours.length - i));
+                    
+                    const hour = timestamp.getHours();
+                    const isDaytime = hour >= 6 && hour <= 18;
+                    
+                    let luminosity = 0;
+                    if (isDaytime) {
+                        luminosity = 100 * (1 - hours[i] / 100) * calculateSolarAngleFactor(hour);
+                    }
+                    
+                    hourlyData.push({
+                        timestamp,
+                        luminosity: Math.round(luminosity * 10) / 10,
+                        cloudCover: hours[i],
+                        solarPotential: Math.round((luminosity / 100) * 1000) / 1000
+                    });
+                }
+                
+                return hourlyData;
+            };
+
+            const generateForecast = (data) => {
+                const forecastData = [];
+                const dailyData = data.daily;
+                
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date();
+                    date.setDate(date.getDate() + i);
+                    
+                    const sunshineDuration = dailyData.sunshine_duration[i] || 0;
+                    const precipitation = dailyData.precipitation_sum[i] || 0;
+                    
+                    const avgLuminosity = (sunshineDuration / 43200) * 100 * (1 - precipitation / 50);
+                    const avgSolarPotential = (avgLuminosity / 100) * 0.6;
+                    
+                    forecastData.push({
+                        date,
+                        avgLuminosity: Math.round(Math.min(avgLuminosity, 100) * 10) / 10,
+                        sunshineDuration: Math.round(sunshineDuration / 3600 * 10) / 10,
+                        solarPotential: Math.round(avgSolarPotential * 1000) / 1000,
+                        precipitation
+                    });
+                }
+                
+                return forecastData;
+            };
+
+            const calculateSummary = (range) => {
+                let dataToAnalyze = [];
+                const now = new Date();
+                
+                switch(range) {
+                    case 'daily':
+                        dataToAnalyze = historicalData.filter(d => 
+                            d.timestamp.getDate() === now.getDate()
+                        );
+                        break;
+                    case 'weekly':
+                        dataToAnalyze = historicalData.filter(d => 
+                            (now - d.timestamp) / (1000 * 60 * 60 * 24) <= 7
+                        );
+                        break;
+                    case 'monthly':
+                        dataToAnalyze = historicalData.filter(d => 
+                            (now - d.timestamp) / (1000 * 60 * 60 * 24) <= 30
+                        );
+                        break;
+                }
+                
+                if (dataToAnalyze.length === 0) return null;
+                
+                const avgLuminosity = dataToAnalyze.reduce((sum, d) => sum + d.luminosity, 0) / dataToAnalyze.length;
+                const maxLuminosity = Math.max(...dataToAnalyze.map(d => d.luminosity));
+                const avgSolarPotential = dataToAnalyze.reduce((sum, d) => sum + d.solarPotential, 0) / dataToAnalyze.length;
+                const peakHours = dataToAnalyze.filter(d => d.luminosity > 70).length;
+                
+                return {
+                    avgLuminosity: Math.round(avgLuminosity * 10) / 10,
+                    maxLuminosity: Math.round(maxLuminosity * 10) / 10,
+                    avgSolarPotential: Math.round(avgSolarPotential * 1000) / 1000,
+                    peakHours,
+                    totalDataPoints: dataToAnalyze.length
+                };
+            };
+
+            if (loading) {
+                return (
+                    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-yellow-50 flex items-center justify-center">
+                        <div className="text-center">
+                            <Sun className="w-16 h-16 text-yellow-500 animate-spin mx-auto mb-4" />
+                            <p className="text-xl text-gray-700">Loading luminosity data...</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            const summary = calculateSummary(timeRange);
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-yellow-50 p-4">
+                    <div className="max-w-6xl mx-auto">
+                        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <Sun className="w-10 h-10 text-yellow-500" />
+                                    <div>
+                                        <h1 className="text-3xl font-bold text-gray-800">Solar Luminosity Tracker</h1>
+                                        <p className="text-gray-600 flex items-center gap-2">
+                                            <MapPin className="w-4 h-4" />
+                                            {location ? `${location.lat.toFixed(2)}°, ${location.lon.toFixed(2)}°` : 'Unknown'}
+                                        </p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => getDeviceLocation()}
+                                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+                                >
+                                    Refresh Data
+                                </button>
+                            </div>
+
+                            <div className="flex gap-2 border-b">
+                                <button
+                                    onClick={() => setView('current')}
+                                    className={`px-4 py-2 font-medium transition ${
+                                        view === 'current' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600'
+                                    }`}
+                                >
+                                    Current
+                                </button>
+                                <button
+                                    onClick={() => setView('trends')}
+                                    className={`px-4 py-2 font-medium transition ${
+                                        view === 'trends' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600'
+                                    }`}
+                                >
+                                    Trends
+                                </button>
+                                <button
+                                    onClick={() => setView('forecast')}
+                                    className={`px-4 py-2 font-medium transition ${
+                                        view === 'forecast' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-600'
+                                    }`}
+                                >
+                                    Forecast
+                                </button>
+                            </div>
+                        </div>
+
+                        {view === 'current' && currentData && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="bg-white rounded-lg shadow-lg p-6">
+                                    <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <Sun className="w-6 h-6 text-yellow-500" />
+                                        Live Luminosity
+                                    </h2>
+                                    <div className="text-center">
+                                        <div className="text-6xl font-bold text-yellow-600 mb-2">
+                                            {currentData.luminosity}%
+                                        </div>
+                                        <p className="text-gray-600 mb-4">Current Light Intensity</p>
+                                        <div className="w-full bg-gray-200 rounded-full h-4 mb-4">
+                                            <div
+                                                className="bg-gradient-to-r from-yellow-400 to-orange-500 h-4 rounded-full transition-all duration-500"
+                                                style={{ width: `${currentData.luminosity}%` }}
+                                            ></div>
+                                        </div>
+                                        <div className="flex justify-center gap-2 mb-4">
+                                            {currentData.isDaytime ? (
+                                                <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">
+                                                    Daytime
+                                                </span>
+                                            ) : (
+                                                <span className="px-3 py-1 bg-gray-700 text-white rounded-full text-sm">
+                                                    Nighttime
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-lg shadow-lg p-6">
+                                    <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <Zap className="w-6 h-6 text-blue-500" />
+                                        Solar Power Potential
+                                    </h2>
+                                    <div className="text-center">
+                                        <div className="text-5xl font-bold text-blue-600 mb-2">
+                                            {currentData.solarPotential}
+                                        </div>
+                                        <p className="text-gray-600 mb-6">kW per m² (peak capacity)</p>
+                                        <div className="text-left space-y-3">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-gray-600">Cloud Cover:</span>
+                                                <span className="font-semibold">{currentData.cloudCover}%</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-gray-600">Humidity:</span>
+                                                <span className="font-semibold">{currentData.humidity}%</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-gray-600">Temperature:</span>
+                                                <span className="font-semibold">{currentData.temperature}°C</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-lg shadow-lg p-6 md:col-span-2">
+                                    <h2 className="text-xl font-bold text-gray-800 mb-4">Environmental Factors</h2>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div className="text-center p-4 bg-blue-50 rounded-lg">
+                                            <Cloud className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                                            <p className="text-sm text-gray-600">Cloud Cover</p>
+                                            <p className="text-2xl font-bold text-blue-600">{currentData.cloudCover}%</p>
+                                        </div>
+                                        <div className="text-center p-4 bg-green-50 rounded-lg">
+                                            <TrendingUp className="w-8 h-8 text-green-500 mx-auto mb-2" />
+                                            <p className="text-sm text-gray-600">Efficiency</p>
+                                            <p className="text-2xl font-bold text-green-600">
+                                                {Math.round((currentData.solarPotential / 1.0) * 100)}%
+                                            </p>
+                                        </div>
+                                        <div className="text-center p-4 bg-purple-50 rounded-lg">
+                                            <Sun className="w-8 h-8 text-purple-500 mx-auto mb-2" />
+                                            <p className="text-sm text-gray-600">Light Quality</p>
+                                            <p className="text-2xl font-bold text-purple-600">
+                                                {currentData.luminosity > 70 ? 'Excellent' : currentData.luminosity > 40 ? 'Good' : 'Fair'}
+                                            </p>
+                                        </div>
+                                        <div className="text-center p-4 bg-orange-50 rounded-lg">
+                                            <Zap className="w-8 h-8 text-orange-500 mx-auto mb-2" />
+                                            <p className="text-sm text-gray-600">Power Rating</p>
+                                            <p className="text-2xl font-bold text-orange-600">
+                                                {currentData.luminosity > 70 ? 'High' : currentData.luminosity > 40 ? 'Medium' : 'Low'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'trends' && (
+                            <div className="space-y-6">
+                                <div className="bg-white rounded-lg shadow-lg p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h2 className="text-xl font-bold text-gray-800">Historical Trends</h2>
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setTimeRange('daily')}
+                                                className={`px-4 py-2 rounded-lg transition ${
+                                                    timeRange === 'daily' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
+                                                }`}
+                                            >
+                                                Daily
+                                            </button>
+                                            <button
+                                                onClick={() => setTimeRange('weekly')}
+                                                className={`px-4 py-2 rounded-lg transition ${
+                                                    timeRange === 'weekly' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
+                                                }`}
+                                            >
+                                                Weekly
+                                            </button>
+                                            <button
+                                                onClick={() => setTimeRange('monthly')}
+                                                className={`px-4 py-2 rounded-lg transition ${
+                                                    timeRange === 'monthly' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'
+                                                }`}
+                                            >
+                                                Monthly
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {summary && (
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                            <div className="bg-blue-50 p-4 rounded-lg">
+                                                <p className="text-sm text-gray-600 mb-1">Avg Luminosity</p>
+                                                <p className="text-2xl font-bold text-blue-600">{summary.avgLuminosity}%</p>
+                                            </div>
+                                            <div className="bg-yellow-50 p-4 rounded-lg">
+                                                <p className="text-sm text-gray-600 mb-1">Peak Luminosity</p>
+                                                <p className="text-2xl font-bold text-yellow-600">{summary.maxLuminosity}%</p>
+                                            </div>
+                                            <div className="bg-green-50 p-4 rounded-lg">
+                                                <p className="text-sm text-gray-600 mb-1">Avg Solar Power</p>
+                                                <p className="text-2xl font-bold text-green-600">{summary.avgSolarPotential} kW/m²</p>
+                                            </div>
+                                            <div className="bg-purple-50 p-4 rounded-lg">
+                                                <p className="text-sm text-gray-600 mb-1">Peak Hours</p>
+                                                <p className="text-2xl font-bold text-purple-600">{summary.peakHours}</p>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="h-64 bg-gray-50 rounded-lg p-4 overflow-x-auto">
+                                        <svg width="100%" height="100%" viewBox="0 0 800 200">
+                                            {historicalData.slice(-48).map((point, i, arr) => {
+                                                const x = (i / arr.length) * 780 + 10;
+                                                const y = 190 - (point.luminosity / 100) * 170;
+                                                const nextPoint = arr[i + 1];
+                                                
+                                                return nextPoint ? (
+                                                    <line
+                                                        key={i}
+                                                        x1={x}
+                                                        y1={y}
+                                                        x2={(i + 1) / arr.length * 780 + 10}
+                                                        y2={190 - (nextPoint.luminosity / 100) * 170}
+                                                        stroke="#3B82F6"
+                                                        strokeWidth="2"
+                                                    />
+                                                ) : null;
+                                            })}
+                                            {historicalData.slice(-48).map((point, i, arr) => {
+                                                const x = (i / arr.length) * 780 + 10;
+                                                const y = 190 - (point.luminosity / 100) * 170;
+                                                
+                                                return (
+                                                    <circle
+                                                        key={`point-${i}`}
+                                                        cx={x}
+                                                        cy={y}
+                                                        r="3"
+                                                        fill="#3B82F6"
+                                                    />
+                                                );
+                                            })}
+                                            <line x1="10" y1="190" x2="790" y2="190" stroke="#CBD5E1" strokeWidth="1" />
+                                            <line x1="10" y1="20" x2="10" y2="190" stroke="#CBD5E1" strokeWidth="1" />
+                                            <text x="5" y="25" fontSize="10" fill="#64748B">100%</text>
+                                            <text x="5" y="110" fontSize="10" fill="#64748B">50%</text>
+                                            <text x="5" y="195" fontSize="10" fill="#64748B">0%</text>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'forecast' && (
+                            <div className="bg-white rounded-lg shadow-lg p-6">
+                                <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                    <Calendar className="w-6 h-6 text-blue-500" />
+                                    7-Day Luminosity Forecast
+                                </h2>
+                                <div className="space-y-4">
+                                    {forecast.map((day, i) => (
+                                        <div key={i} className="border rounded-lg p-4 hover:bg-gray-50 transition">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <div>
+                                                    <p className="font-semibold text-gray-800">
+                                                        {day.date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+                                                    </p>
+                                                    <p className="text-sm text-gray-600">
+                                                        {day.sunshineDuration}h sunshine duration
+                                                    </p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-2xl font-bold text-blue-600">{day.avgLuminosity}%</p>
+                                                    <p className="text-sm text-gray-600">{day.solarPotential} kW/m²</p>
+                                                </div>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-3">
+                                                <div
+                                                    className="bg-gradient-to-r from-blue-400 to-yellow-500 h-3 rounded-full"
+                                                    style={{ width: `${day.avgLuminosity}%` }}
+                                                ></div>
+                                            </div>
+                                            {day.precipitation > 0 && (
+                                                <p className="text-sm text-blue-600 mt-2">
+                                                    ⚠️ {day.precipitation}mm precipitation expected
+                                                </p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="mt-6 text-center text-sm text-gray-600">
+                            <p>Last updated: {currentData?.timestamp.toLocaleTimeString()}</p>
+                            <p className="mt-1">Click "Refresh Data" to update with latest conditions</p>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<LuminosityApp />);
+    </script>
+</body>
+</html>
